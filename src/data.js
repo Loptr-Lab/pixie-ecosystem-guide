@@ -28,7 +28,7 @@ export const PIXIE_ROLES = [
     name: "Make and shape creative work",
     project: "PIXIE Creator OS",
     stage: "Workspace prototype",
-    summary: "Prepare a creative draft, review its context, and think through how you might share it.",
+    summary: "Prepare mobile activations, promotions or field reports with source context and attribution, then review a manual sharing handoff.",
     boundary: "The sharing choices are previews. Signing in to another service or publishing from this workspace is not connected.",
     links: [
       { label: "Open the workspace", url: "https://ibloud.github.io/pixie-creator-os/" },
@@ -50,10 +50,10 @@ export const PIXIE_ROLES = [
   {
     id: "holdings",
     name: "Think through choices",
-    project: "PIXIE Holdings / PIXIE OS",
-    stage: "Not currently working",
-    summary: "The project explores choices around creator resources and possible next steps; its current version is not a working demo.",
-    boundary: "Do not treat it as a running tool. The project notes describe a receipt for review, not an action that changes other projects.",
+    project: "PIXIE Holdings",
+    stage: "Executable test bench · device review open",
+    summary: "Source-reviewed synthetic scenarios explore resource choices and consequences. The focused public page and development archive were retrieved on 18 October 2026.",
+    boundary: "The ledger is synthetic. A prepared receipt does not establish a real file operation or payment; device and independent-user acceptance remain open.",
     links: [
       { label: "Read about PIXIE Holdings", url: "https://ecosystem.loptrlab.com/projects/pixie-holdings/" },
       { label: "Check current site status", url: "https://holdings.loptrlab.com/" }

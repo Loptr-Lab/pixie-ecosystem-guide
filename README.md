@@ -36,3 +36,10 @@ Official references:
 - [Managing a custom domain for your GitHub Pages site](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-your-custom-domain-for-your-github-pages-site)
 - [Verifying your custom domain for GitHub Pages](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/verifying-your-custom-domain-for-github-pages)
 - [Using custom workflows with GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
+
+## Hosting decision and DNS handoff
+
+Use this existing GitHub repository as PIXIE’s public guide/front door. Keep the
+working Project Companion Site and plugin identity in place during acceptance.
+See [HOSTING-AND-DNS.md](HOSTING-AND-DNS.md) for the exact DNS record, verified
+deployment blocker and separation between source development and server hosting.
