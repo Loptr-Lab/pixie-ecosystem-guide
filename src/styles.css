@@ -231,3 +231,9 @@ h1, h2, h3, p { margin-top: 0; }
 @media (forced-colors: active) {
   .button, .brand-mark, .directory-feature, .role-card, .focus-item, .why-card, .contribute-card, .feedback-band { border: 1px solid CanvasText; }
 }
+
+/* Progressive disclosure keeps the story available without delaying contributor tasks. */
+.guide-background { margin: 36px 0; border-block: 1px solid var(--line); padding: 20px 0; }
+summary { cursor: pointer; font-size: 18px; padding: 12px 0; }
+summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+#start-work { scroll-margin-top: 24px; }
