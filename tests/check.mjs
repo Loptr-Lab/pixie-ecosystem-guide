@@ -24,8 +24,8 @@ const discovery = PIXIE_ROLES.find((role) => role.id === "discovery");
 assert.ok(discovery.stage.includes("review pending"), "Do not call the Public Discovery pilot externally verified.");
 assert.ok(discovery.boundary.includes("remain open"), "Keep its external review gaps visible.");
 const holdings = PIXIE_ROLES.find((role) => role.id === "holdings");
-assert.equal(holdings.stage, "Not currently working", "Do not call PIXIE Holdings a working prototype.");
-assert.ok(holdings.summary.includes("not a working demo"), "Explain that Holdings is not a working demo.");
+assert.ok(holdings.stage.includes("device review open"), "Keep device acceptance distinct from implementation.");
+assert.ok(holdings.summary.includes("18 October 2026"), "Date the source/live-page review without claiming device acceptance.");
 assert.ok(!holdings.links.some((link) => link.label.toLowerCase().startsWith("try")), "Do not invite visitors to try the non-working Holdings prototype.");
 const readAloud = PIXIE_ROLES.find((role) => role.id === "read-aloud");
 assert.equal(readAloud.stage, "Code reference", "GitHub source code is not a live browser example.");
@@ -89,7 +89,7 @@ if (existsSync(new URL("../public/index.html", import.meta.url))) {
   }
   assert.ok(builtHtml.includes("The story format and the software map are related"), "Keep the rationale in initial HTML.");
   assert.ok(builtHtml.includes("role-discovery") && builtHtml.includes("role-holdings") && builtHtml.includes("role-learning"), "Build every role card into the initial HTML.");
-  assert.ok(builtHtml.includes("Searches public Bluesky posts") && builtHtml.includes("not a working demo"), "Keep role maturity visible without JavaScript.");
+  assert.ok(builtHtml.includes("Searches public Bluesky posts") && builtHtml.includes("device review open"), "Keep role maturity visible without JavaScript.");
   assert.ok(builtHtml.includes("Read the pilot questions") && builtHtml.includes("voluntary and unpaid"), "Keep concrete contribution guidance in the initial HTML.");
 }
 
