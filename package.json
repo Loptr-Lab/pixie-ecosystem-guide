@@ -1,0 +1,14 @@
+{
+  "name": "pixie-ecosystem-guide",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "node --check server.mjs && node --check scripts/build.mjs && node --check src/data.js && node --check src/app.js && node --check tests/check.mjs && node tests/check.mjs"
+  }
+}

@@ -1,0 +1,38 @@
+# PIXIE Ecosystem Guide
+
+This is a plain-language, out-of-world guide to PIXIE’s place across Loptr Lab. It explains how a deliberately transmedia story can be discovered across separate media, while the studio’s repositories also contain genuinely separate stories, planning documents, prototypes, and code references at different stages. The guide maps those pieces; it does not connect them into one service or declare every link part of one fictional continuity.
+
+Loptr Lab identifies its current transmedia ARG concept focus as *50 Ways to Leave Another*. The experience remains in development and is not a complete, end-to-end playable release. The owner identifies the public “Pixie” story treatment in *Urban Alien Adventures* as a source for PIXIE’s creation. That post says further development of the story should remain offline; this guide links to it as context, not as a playable clue or invitation to rewrite it.
+
+The guide describes PIXIE as a recurring, project-specific helper/interface idea. The owner’s comparison to VIKI from *I, Robot* is presented as a warning against overriding people’s choices, not as a claim about current software. MCP is a connection protocol, not the character and not evidence that all projects share access. Project cards link to source notes and state what is live, experimental, planned, or not currently working.
+
+## Participation and feedback
+
+Visitors can start with one project, ask what is actually working, flag confusing wording, or identify an accessibility barrier. For code, follow the instructions in that project’s own repository. Loptr Lab says current open reviews and contributions are voluntary and unpaid; scope, time, public credit, and an exit path should be agreed in writing before work begins. Participation does not promise employment, ownership, academic credit, or future pay. See the [collaboration pathways](https://ibloud.github.io/collaborate/) and [mission and participation terms](https://github.com/ibloud/ibloud.github.io/blob/main/MISSION.md).
+
+The guide’s feedback link opens a public GitHub issue; anyone can read it and the person posting needs a GitHub account. Do not share private or confidential information. Public repository visibility does not itself grant permission to reuse story material, artwork, or code; no new license has been selected for this guide.
+
+## Run and check locally
+
+Requires Node.js 22 or newer. There are no package dependencies to install.
+
+```sh
+npm start
+npm run build
+npm run check
+```
+
+The dependency-free build writes static files to `public/`. It embeds the role cards and focus areas in the initial HTML so the published page remains useful without JavaScript.
+
+## GitHub Pages and `pixie.loptrlab.com`
+
+The existing public repository `Loptr-Lab/duet-solo-hackathon` already publishes a different site at `break.loptrlab.com`. Do not change its Pages domain or root deployment. The approved guide destination is the separate public repository `Loptr-Lab/pixie-ecosystem-guide`.
+
+The Pages workflow uses GitHub Actions and publishes `public/`. The first public deployment can use GitHub’s default project URL and remain `noindex` while the custom domain is pending. To use `pixie.loptrlab.com`, the owner must add the CNAME in Porkbun: Type `CNAME`, Host `pixie`, Answer/Value `Loptr-Lab.github.io`. Add a TXT verification record only if GitHub supplies its exact value. No DNS records are changed from this workspace. Do not call the custom domain live until DNS and HTTPS are verified.
+
+Official references:
+
+- [About custom domains and GitHub Pages](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/about-custom-domains-and-github-pages)
+- [Managing a custom domain for your GitHub Pages site](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-your-custom-domain-for-your-github-pages-site)
+- [Verifying your custom domain for GitHub Pages](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/verifying-your-custom-domain-for-github-pages)
+- [Using custom workflows with GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
