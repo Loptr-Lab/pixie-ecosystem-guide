@@ -94,3 +94,15 @@ if (existsSync(new URL("../public/index.html", import.meta.url))) {
 }
 
 console.log(`Project check passed: ${PIXIE_ROLES.length} source-linked roles, accurate story boundaries, contribution disclosures, 18px minimum text, and static content.`);
+
+// The public entry journey must ship complete, with local reading/download assets.
+const outputRoot = new URL('../public/', import.meta.url);
+if (existsSync(outputRoot)) {
+  for (const href of [...html.matchAll(/href="(\.\/[^"#]+)"/g)].map(m => m[1])) {
+    assert.ok(existsSync(new URL(href, outputRoot)), `Packaged link must resolve: ${href}`);
+  }
+  const ids = [...html.matchAll(/id="([^"]+)"/g)].map(m => m[1]);
+  assert.equal(new Set(ids).size, ids.length, 'Section IDs must be unique.');
+  for (const [, id] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.includes(id), `Local navigation must resolve: ${id}`);
+  assert.ok(readFileSync(new URL('assets/make-room-for-the-work.pdf', outputRoot)).subarray(0, 5).equals(Buffer.from('%PDF-')), 'Download must be a PDF.');
+}

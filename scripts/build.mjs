@@ -54,3 +54,5 @@ for (const file of ["app.js", "data.js", "styles.css"]) {
 copyFileSync(path.join(root, "assets", "pixie-ecosystem.jpeg"), path.join(output, "assets", "pixie-ecosystem.jpeg"));
 
 console.log("Static PIXIE guide built in public/ with the page content present in its initial HTML.");
+
+for (const file of ["make-room-for-the-work.pdf", "make-room-for-the-work.html"]) copyFileSync(path.join(root, "assets", file), path.join(output, "assets", file));
