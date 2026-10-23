@@ -6,9 +6,9 @@
   --text: #f5f8fb;
   --muted: #d0deea;
   --quiet: #b5c7d7;
-  --cyan: #7ce9f1;
-  --cyan-soft: #b7f6f8;
-  --violet: #c7a8ff;
+  --cyan: #9cddd0;
+  --cyan-soft: #c0eee4;
+  --violet: #f3a68c;
   --amber: #f5d58b;
   --line: #29465d;
   --line-soft: #1b354a;
@@ -246,3 +246,28 @@ summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
 .pixie-helper nav a { display: block; padding: 12px 0; color: #a5f3e7; }
 body { padding-bottom: 88px; }
 @media print { .pixie-helper { display: none; } }
+
+/* Shared front-door rhythm: reuse across the task and ebook entry points. */
+:root { --space-1: .5rem; --space-2: 1rem; --space-3: 1.5rem; --space-4: 2rem; --space-section: clamp(3rem, 6vw, 5rem); --paper: #faf7f0; --ink: #152e35; --coral: #f3a68c; }
+.hero { padding-block: var(--space-section) var(--space-4); }
+.hero h1 { font-size: clamp(3rem, 7vw, 6rem); }
+.hero-lede { max-width: 48rem; }
+.entry-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.entry-card { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--line); border-radius: 12px; background: var(--panel); min-width: 0; }
+.entry-card h3 { margin: 0; font-size: 1.4rem; line-height: 1.3; }
+.entry-card p { margin: 0; color: var(--muted); }
+.entry-card .button { margin-top: auto; }
+.handoff-note { max-width: 70ch; margin-block: var(--space-3) 0; color: var(--quiet); }
+.ebook-section { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: var(--space-4); align-items: center; padding-block: var(--space-4); margin-bottom: var(--space-section); }
+.book-cover { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-4); min-height: 25rem; padding: var(--space-4); color: var(--ink); background: var(--paper); border-left: 10px solid var(--coral); border-radius: 4px 12px 12px 4px; }
+.book-cover strong { font: 400 clamp(2.4rem, 4vw, 3.5rem)/1.1 var(--serif); }
+.ebook-copy h2 { font: 400 clamp(2rem, 4vw, 3.5rem)/1.1 var(--serif); margin-bottom: var(--space-3); }
+.ebook-copy ul { padding-left: var(--space-3); }
+.ebook-copy li + li { margin-top: var(--space-1); }
+.button, .top-nav a, summary { min-height: 48px; }
+.top-nav a { display: inline-flex; align-items: center; }
+.button { border-radius: 8px; overflow-wrap: anywhere; text-align: center; }
+.top-nav { flex-wrap: wrap; }
+.entry-card, .ebook-copy { overflow-wrap: anywhere; }
+@media(max-width: 900px) { .entry-grid, .ebook-section { grid-template-columns: 1fr; } .book-cover { max-width: 28rem; width: 100%; min-height: 22rem; } }
+@media(max-width: 650px) { .top-nav { overflow: visible; gap: .5rem 1rem; } .top-nav a { flex: 0 1 auto; } .entry-card .button, .ebook-copy .button { width: 100%; } .ebook-section { gap: var(--space-3); } }

@@ -11,7 +11,8 @@ const mime = new Map([
   [".js", "text/javascript; charset=utf-8"],
   [".mjs", "text/javascript; charset=utf-8"],
   [".json", "application/json; charset=utf-8"],
-  [".svg", "image/svg+xml"]
+  [".svg", "image/svg+xml"],
+  [".pdf", "application/pdf"]
 ]);
 
 function send(res, status, message) {
