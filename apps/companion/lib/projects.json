@@ -1,0 +1,276 @@
+[
+  {
+    "id": "duet",
+    "name": "Duet",
+    "door": "Play & test",
+    "repository": "Loptr-Lab/duet-solo-hackathon",
+    "purpose": "Accessible two-player strategy prototype.",
+    "status": "Source contains screen-reader and fog presentation; human accessibility acceptance remains pending.",
+    "nextAction": "Run one keyboard or touch interaction and report the expected and actual result.",
+    "doneWhen": "A report names the build, input method, steps and observed barrier.",
+    "minutes": 15,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": "ceafef26cc6341e66ce115492877a172577cf32f",
+    "sourceUrl": "https://github.com/Loptr-Lab/duet-solo-hackathon/blob/ceafef26cc6341e66ce115492877a172577cf32f/public/index.html",
+    "repositoryUrl": "https://github.com/Loptr-Lab/duet-solo-hackathon",
+    "issueUrl": "https://github.com/Loptr-Lab/duet-solo-hackathon/issues",
+    "statusKind": "reviewed snapshot",
+    "limitations": [
+      "No live deployment or human acceptance verified by this plugin.",
+      "Suggested work is not an assigned task or permission to modify the project."
+    ]
+  },
+  {
+    "id": "engine",
+    "name": "Veiled Dominion Engine",
+    "door": "Build systems",
+    "repository": "Loptr-Lab/veiled-dominion-engine",
+    "purpose": "Canonical four-player rules and reusable engine work.",
+    "status": "Architecture defines deterministic transitions. Latest local audit: typecheck passed; 24 exercise tests failed. This is not a completed game.",
+    "nextAction": "Inspect one state transition and specify a replay fixture without changing canonical rules.",
+    "doneWhen": "A reviewer can reproduce the initial state, ordered actions and expected final state.",
+    "minutes": 30,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": "137bf00bc4c622924cc6676e7a3564d839634ebb",
+    "sourceUrl": "https://github.com/Loptr-Lab/veiled-dominion-engine/blob/137bf00bc4c622924cc6676e7a3564d839634ebb/ARCHITECTURE_OVERVIEW.md",
+    "repositoryUrl": "https://github.com/Loptr-Lab/veiled-dominion-engine",
+    "issueUrl": "https://github.com/Loptr-Lab/veiled-dominion-engine/issues",
+    "statusKind": "reviewed snapshot",
+    "limitations": [
+      "No live deployment or human acceptance verified by this plugin.",
+      "Suggested work is not an assigned task or permission to modify the project."
+    ]
+  },
+  {
+    "id": "hero-cards",
+    "name": "Original hero-card experiment",
+    "door": "Explore stories",
+    "repository": "ibloud/Paragon-Reborn",
+    "purpose": "Original characters, tarot-informed build choices and authored consequences.",
+    "status": "Concept and pre-production; tarot is a creative vocabulary, not mathematical balance. Historical Paragon research is not a production roster.",
+    "nextAction": "Sketch one original ability with cost, timing, counterplay and a consequential story choice.",
+    "doneWhen": "The ability has an explicit limitation and the choice changes a later objective.",
+    "minutes": 20,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": "3ddb52994be4450c11c54ec07d2288372587a375",
+    "sourceUrl": "https://github.com/ibloud/Paragon-Reborn/blob/3ddb52994be4450c11c54ec07d2288372587a375/docs/ORIGINAL_HERO_CARD_DIRECTION.md",
+    "repositoryUrl": "https://github.com/ibloud/Paragon-Reborn",
+    "issueUrl": "https://github.com/ibloud/Paragon-Reborn/issues",
+    "statusKind": "reviewed snapshot",
+    "limitations": [
+      "No live deployment or human acceptance verified by this plugin.",
+      "Suggested work is not an assigned task or permission to modify the project."
+    ]
+  },
+  {
+    "id": "violet",
+    "name": "Violet’s Revenge",
+    "door": "Play & test",
+    "repository": "ibloud/violets-revenge",
+    "purpose": "Separate horror project with a browser prototype.",
+    "status": "Source audit found render-coupled simulation and shared gameplay/cosmetic randomness; device impact is unmeasured.",
+    "nextAction": "Observe one browser encounter and describe whether its danger and response were clear.",
+    "doneWhen": "Record device, steps and observation; avoid claiming multiplayer or accessibility acceptance.",
+    "minutes": 15,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": "a2398a910946a7945f849e44b76358faae3a4036",
+    "sourceUrl": "https://github.com/ibloud/violets-revenge/blob/a2398a910946a7945f849e44b76358faae3a4036/README.md",
+    "repositoryUrl": "https://github.com/ibloud/violets-revenge",
+    "issueUrl": "https://github.com/ibloud/violets-revenge/issues",
+    "statusKind": "reviewed snapshot",
+    "limitations": [
+      "No live deployment or human acceptance verified by this plugin.",
+      "Suggested work is not an assigned task or permission to modify the project."
+    ]
+  },
+  {
+    "id": "pixie",
+    "name": "PIXIE Device Stewardship",
+    "door": "Organize & resume",
+    "repository": "ibloud/pixie-device-stewardship",
+    "purpose": "Research and specification for consent-based creator stewardship.",
+    "status": "Specification rejects covert monitoring and emotional inference; integration enforcement needs separate evidence.",
+    "nextAction": "Map one frustrating file task: what input is needed, what action is proposed, and how to undo it.",
+    "doneWhen": "The proposal explains purpose, permission, correction and rollback without including private files.",
+    "minutes": 15,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": "0a0e46c6c049b6ba47718699089ed47c928dfdf5",
+    "sourceUrl": "https://github.com/ibloud/pixie-device-stewardship/blob/0a0e46c6c049b6ba47718699089ed47c928dfdf5/CONTRIBUTING.md",
+    "repositoryUrl": "https://github.com/ibloud/pixie-device-stewardship",
+    "issueUrl": "https://github.com/ibloud/pixie-device-stewardship/issues",
+    "statusKind": "reviewed snapshot",
+    "limitations": [
+      "No live deployment or human acceptance verified by this plugin.",
+      "Suggested work is not an assigned task or permission to modify the project."
+    ]
+  },
+  {
+    "id": "holdings",
+    "name": "PIXIE Holdings",
+    "door": "Organize & resume",
+    "repository": "ibloud/pixie-holdings",
+    "purpose": "Governed assistant and synthetic portfolio-economics test bench.",
+    "status": "Reference market data is separated in documentation from synthetic game state; preview-only action boundaries require end-to-end verification.",
+    "nextAction": "Inspect a preview and identify its proposed action, consequence and cancellation path.",
+    "doneWhen": "The observation separates preview from execution and uses only fictional or public data.",
+    "minutes": 15,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": "f5c1cd7d9f8b02dfff6f7ff4ae7ecb8fa0c4ea5a",
+    "sourceUrl": "https://github.com/ibloud/pixie-holdings/blob/f5c1cd7d9f8b02dfff6f7ff4ae7ecb8fa0c4ea5a/README.md",
+    "repositoryUrl": "https://github.com/ibloud/pixie-holdings",
+    "issueUrl": "https://github.com/ibloud/pixie-holdings/issues",
+    "statusKind": "reviewed snapshot",
+    "limitations": [
+      "No live deployment or human acceptance verified by this plugin.",
+      "Suggested work is not an assigned task or permission to modify the project."
+    ]
+  },
+  {
+    "id": "training",
+    "name": "Loptr Lab Training",
+    "door": "Learn & contribute",
+    "repository": "Loptr-Lab/training",
+    "purpose": "Accessible learning and contribution pathways.",
+    "status": "Planning guidance and governance are present; they do not guarantee funding, employment or academic credit.",
+    "nextAction": "Choose one functional access need and a small learning task that fits your available time.",
+    "doneWhen": "Name a concrete artifact and reviewer; no medical disclosure is necessary.",
+    "minutes": 10,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": "3eea61c107aeaba6bf463cb9601655f6e309a6a9",
+    "sourceUrl": "https://github.com/Loptr-Lab/training/blob/3eea61c107aeaba6bf463cb9601655f6e309a6a9/README.md",
+    "repositoryUrl": "https://github.com/Loptr-Lab/training",
+    "issueUrl": "https://github.com/Loptr-Lab/training/issues",
+    "statusKind": "reviewed snapshot",
+    "limitations": [
+      "No live deployment or human acceptance verified by this plugin.",
+      "Suggested work is not an assigned task or permission to modify the project."
+    ]
+  },
+  {
+    "id": "architecture",
+    "name": "Duet Architecture Lab",
+    "door": "Build systems",
+    "repository": "ibloud/duet_engine_architecture",
+    "purpose": "Extract and validate reusable systems before engine promotion.",
+    "status": "The lab documents the path from Duet playtest source to validated reusable architecture. Human acceptance is separate.",
+    "nextAction": "Compare command, visual and spoken output for one visible or hidden board state.",
+    "doneWhen": "All supported channels expose only the same permitted information.",
+    "minutes": 25,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": "8a3a886de8a0f10af145356b785160a3b6cedb2b",
+    "sourceUrl": "https://github.com/ibloud/duet_engine_architecture/blob/8a3a886de8a0f10af145356b785160a3b6cedb2b/README.md",
+    "repositoryUrl": "https://github.com/ibloud/duet_engine_architecture",
+    "issueUrl": "https://github.com/ibloud/duet_engine_architecture/issues",
+    "statusKind": "reviewed snapshot",
+    "limitations": [
+      "No live deployment or human acceptance verified by this plugin.",
+      "Suggested work is not an assigned task or permission to modify the project."
+    ]
+  },
+  {
+    "id": "ren-rhapsody",
+    "name": "Ren Rhapsody",
+    "door": "Explore stories",
+    "repository": "ibloud/ren-rhapsody",
+    "purpose": "Fan-made musical journey blueprint and UEFN concept.",
+    "status": "The README describes an interactive web blueprint, not a verified playable Fortnite island. Artist participation, endorsement and music permission are not established.",
+    "nextAction": "Read one proposed zone and identify a mechanic that can be tested with original placeholder audio.",
+    "doneWhen": "The proposal states what is playable versus planned and does not assume music rights.",
+    "minutes": 15,
+    "reviewedOn": "2026-10-12",
+    "sourceCommit": null,
+    "sourceBlob": "d4e4282638b51ebeccebcc51aa8a09c152ee3332",
+    "sourceUrl": "https://github.com/ibloud/ren-rhapsody/blob/main/README.md",
+    "repositoryUrl": "https://github.com/ibloud/ren-rhapsody",
+    "issueUrl": "https://github.com/ibloud/ren-rhapsody/issues",
+    "statusKind": "reviewed README snapshot; mutable source link",
+    "limitations": [
+      "No live island, rights clearance or artist endorsement verified.",
+      "Specific legal/platform instructions in the source were not validated and must not be repeated as current advice."
+    ]
+  },
+  {
+    "id": "50ways",
+    "name": "50 Ways to Leave Another",
+    "door": "Learn & review",
+    "repository": "ibloud/50-ways-to-leave-another",
+    "purpose": "Music, narrative and rights-aware learning record.",
+    "status": "Static reading pages and a read-only Discovery prototype exist; legal clearance and full device review remain open.",
+    "nextAction": "Follow one learning-path link and report a specific unclear instruction.",
+    "doneWhen": "A report includes the page, expected result and observed result.",
+    "minutes": 20,
+    "reviewedOn": "2026-10-18",
+    "sourceCommit": "4ebfc26e9ff9fbc16df6da4f835ce494bba01788",
+    "sourceUrl": "https://github.com/ibloud/50-ways-to-leave-another/blob/4ebfc26e9ff9fbc16df6da4f835ce494bba01788/README.md",
+    "repositoryUrl": "https://github.com/ibloud/50-ways-to-leave-another",
+    "issueUrl": "https://github.com/ibloud/50-ways-to-leave-another/issues",
+    "statusKind": "reviewed source snapshot; not live acceptance",
+    "limitations": [
+      "Device, accessibility and external-service verification remain task-specific.",
+      "Suggested work is not an assignment or promise of compensation."
+    ]
+  },
+  {
+    "id": "creator-os",
+    "name": "PIXIE Creator OS",
+    "door": "Prepare & share",
+    "repository": "ibloud/pixie-creator-os",
+    "purpose": "Mobile activations, promotions and source-aware reporting.",
+    "status": "Local pre-alpha preparation and manual handoffs; no connected publishing or automated verification.",
+    "nextAction": "Prepare a fictional activation caption, preserve its attribution and test draft export/import.",
+    "doneWhen": "The restored draft keeps its context and requires fresh sharing review.",
+    "minutes": 20,
+    "reviewedOn": "2026-10-18",
+    "sourceCommit": "b9d1b74a1911c62c05fe65ac7066cfd7305d09c8",
+    "sourceUrl": "https://github.com/ibloud/pixie-creator-os/blob/b9d1b74a1911c62c05fe65ac7066cfd7305d09c8/README.md",
+    "repositoryUrl": "https://github.com/ibloud/pixie-creator-os",
+    "issueUrl": "https://github.com/ibloud/pixie-creator-os/issues",
+    "statusKind": "reviewed source snapshot; not live acceptance",
+    "limitations": [
+      "Device, accessibility and external-service verification remain task-specific.",
+      "Suggested work is not an assignment or promise of compensation."
+    ]
+  },
+  {
+    "id": "provenance",
+    "name": "Narrative Provenance",
+    "door": "Preserve sources",
+    "repository": "ibloud/narrative-provenance",
+    "purpose": "Local Obsidian records for authorship, sources, rights and consent.",
+    "status": "Repository documents a released Obsidian plugin; local audits do not establish permission or legal clearance.",
+    "nextAction": "Read the sharing-audit workflow and propose one public-safe test case.",
+    "doneWhen": "The proposed case distinguishes rights, consent and release approval.",
+    "minutes": 20,
+    "reviewedOn": "2026-10-18",
+    "sourceCommit": null,
+    "sourceUrl": "https://github.com/ibloud/narrative-provenance/blob/main/README.md",
+    "repositoryUrl": "https://github.com/ibloud/narrative-provenance",
+    "issueUrl": "https://github.com/ibloud/narrative-provenance/issues",
+    "statusKind": "reviewed source snapshot; not live acceptance",
+    "limitations": [
+      "Device, accessibility and external-service verification remain task-specific.",
+      "Suggested work is not an assignment or promise of compensation."
+    ]
+  },
+  {
+    "id": "made-sick",
+    "name": "Made-Sick",
+    "door": "Discover resources",
+    "repository": "ibloud/made-sick",
+    "purpose": "Creator directory and public resources for independent creative work.",
+    "status": "Creator/resource discovery, source-linked stories and public research tools. PIXIE reads its public resource contract; a resource listing does not establish partnership or professional suitability.",
+    "nextAction": "Find a relevant resource and check the evidence and contact route before preparing an enquiry.",
+    "doneWhen": "A chosen source and an editable next step are ready for creator review.",
+    "minutes": 15,
+    "reviewedOn": "2026-10-23",
+    "sourceCommit": null,
+    "sourceUrl": "https://github.com/ibloud/made-sick/blob/main/README.md",
+    "repositoryUrl": "https://github.com/ibloud/made-sick",
+    "issueUrl": "https://github.com/ibloud/made-sick/issues",
+    "statusKind": "reviewed source; live acceptance separate",
+    "limitations": [
+      "Resource relevance is not credential or ethics verification.",
+      "Directory participation is opt-in; no automatic contact."
+    ]
+  }
+]

@@ -43,3 +43,13 @@ Use this existing GitHub repository as PIXIE’s public guide/front door. Keep t
 working Project Companion Site and plugin identity in place during acceptance.
 See [HOSTING-AND-DNS.md](HOSTING-AND-DNS.md) for the exact DNS record, verified
 deployment blocker and separation between source development and server hosting.
+
+## Companion application source review
+
+The owner selected this existing repository as the preferred source home for a
+separate Companion module, subject to preserving this guide. The recovered,
+independently runnable application is under [apps/companion](apps/companion/README.md).
+Its build, tests and Node/MCP runner are independent of the root guide build.
+This source review does not deploy the module, migrate the existing Site/plugin,
+change domains or establish mirror synchronization. Follow the module's explicit
+acceptance and Site-retirement gates; the guide's existing functionality remains.

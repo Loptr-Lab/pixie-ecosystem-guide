@@ -1,0 +1,57 @@
+// Independent runner for the recovered Companion, not a replacement Site identity.
+import http from 'node:http';
+import {readFile,stat} from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {timingSafeEqual} from 'node:crypto';
+import {runTool,handleRpc} from './lib/companion.mjs';
+
+const defaultRoot=fileURLToPath(new URL('./tangled-site/',import.meta.url));
+const maximumBody=64000;
+function authorized(header,token){
+ if(!token||token.length<32||typeof header!=='string')return false;
+ const expected=Buffer.from('Bearer '+token),actual=Buffer.from(header);
+ return expected.length===actual.length&&timingSafeEqual(expected,actual);
+}
+async function body(request){
+ let length=0;const chunks=[];
+ for await(const chunk of request){length+=chunk.length;if(length>maximumBody)throw Object.assign(Error('Request too large'),{status:413});chunks.push(chunk);}
+ return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+}
+export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=fetch}={}){
+ return http.createServer(async(request,response)=>{
+  const json=(status,value)=>{response.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});response.end(JSON.stringify(value));};
+  try{
+   const url=new URL(request.url,'http://localhost');
+   if(url.pathname==='/health'){json(200,{service:'pixie-companion',mode:'independent',mcp:token.length>=32?'bearer-auth configured':'disabled until configured'});return;}
+   if(url.pathname==='/api/companion'||url.pathname==='/mcp'){
+    if(request.method!=='POST'){response.writeHead(405,{Allow:'POST'});response.end();return;}
+    if(url.pathname==='/api/companion'){
+     const origin=request.headers.origin;
+     if(origin){const parsed=new URL(origin);if(!['http:','https:'].includes(parsed.protocol)||parsed.host!==request.headers.host){json(403,{error:'Invalid origin'});return;}}
+     const payload=await body(request);json(200,await runTool(payload.name,payload.args,fetcher));return;
+    }
+    // Never trust Sites identity headers on an independent public server.
+    if(token.length<32){json(503,{error:'Independent MCP authentication is not configured.'});return;}
+    if(!authorized(request.headers.authorization,token)){json(401,{error:'Bearer authentication required.'});return;}
+    const result=await handleRpc(await body(request),true,fetcher);
+    if(result.body===null){response.writeHead(result.status);response.end();}else json(result.status,result.body);
+    return;
+   }
+   if(!['GET','HEAD'].includes(request.method)){response.writeHead(405,{Allow:'GET, HEAD'});response.end();return;}
+   const decoded=decodeURIComponent(url.pathname);
+   if(decoded.split('/').some(part=>part==='..'||part.startsWith('.'))){json(404,{error:'Not found'});return;}
+   const file=path.resolve(root,'.'+(decoded==='/'?'/index.html':decoded));
+   if(!file.startsWith(path.resolve(root)+path.sep)){json(404,{error:'Not found'});return;}
+   const info=await stat(file);if(!info.isFile())throw Error('Not a file');
+   const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
+   const type=types[path.extname(file)];if(!type){json(404,{error:'Not found'});return;}
+   response.writeHead(200,{'Content-Type':type,'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Cache-Control':'no-store'});
+   response.end(request.method==='HEAD'?undefined:await readFile(file));
+  }catch(error){json(error.status||((error.code==='ENOENT'||error.message==='Not a file')?404:400),{error:error.message||'Request failed'});}
+ });
+}
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ const port=Number(process.env.PORT||4173),host=process.env.HOST||'127.0.0.1';
+ createCompanionServer().listen(port,host,()=>console.log(`PIXIE independent runner listening on ${host}:${port}. No deployment performed.`));
+}

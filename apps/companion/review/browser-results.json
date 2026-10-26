@@ -1,0 +1,42 @@
+{
+  "contrast": {
+    "minimum": 8.619611474409224,
+    "count": 34,
+    "failures": []
+  },
+  "taskRoundtrip": true,
+  "scopeExpansionNotExecuted": true,
+  "projectSwitchPreservesTask": true,
+  "freshReviewRequired": true,
+  "unsavedProgressCannotExport": true,
+  "layouts": [
+    {
+      "width": 1440,
+      "overflow": false,
+      "body": 18,
+      "taskLabel": 18
+    },
+    {
+      "width": 820,
+      "overflow": false,
+      "body": 18,
+      "taskLabel": 18
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "body": 18,
+      "taskLabel": 18
+    },
+    {
+      "width": 320,
+      "overflow": false,
+      "body": 18,
+      "taskLabel": 18
+    }
+  ],
+  "keyboard": "pixie-main",
+  "motion": "auto",
+  "pageErrors": [],
+  "limits": "Chromium viewport checks, not physical iPad/Safari or VoiceOver; no live external provider account or plugin installation tested."
+}

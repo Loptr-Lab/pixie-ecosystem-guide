@@ -1,0 +1,19 @@
+{
+  "client_id": "https://pixie-project-companion.ibloud-ivxx.chatgpt.site/oauth-client-metadata.json",
+  "client_name": "PIXIE Project Companion",
+  "client_uri": "https://pixie-project-companion.ibloud-ivxx.chatgpt.site/",
+  "redirect_uris": [
+    "https://pixie-project-companion.ibloud-ivxx.chatgpt.site/"
+  ],
+  "scope": "atproto",
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "application_type": "web",
+  "dpop_bound_access_tokens": true
+}
