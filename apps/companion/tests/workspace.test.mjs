@@ -50,7 +50,7 @@ test('restore is validated atomically and never silently overwrites existing ide
  const bad=structuredClone(backup);bad.projects[0].token='private';await assert.rejects(s.run('workspace_import',{backup_json:JSON.stringify(bad)}),/Unsupported saved fields/);
  const broken=structuredClone(backup);broken.projects[0].sources=[{id:crypto.randomUUID(),url:'javascript:alert(1)'}];assert.throws(()=>validateWorkspace(broken));
  assert.equal((await s.run('workspace_list',{})).projects.length,2);
- await assert.rejects(s.run('workspace_delete',{project_id:'not-granted',confirmation:crypto.randomUUID()}),/exact project/);
+ await assert.rejects(s.run('workspace_delete',{project_id:p.id,confirmation:crypto.randomUUID()}),/exact project/);
 });
 test('corrupt storage is preserved and failed saves are never acknowledged as success',async()=>{
  const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-corrupt-'));const file=path.join(dir,'workspace.json');await writeFile(file,'not JSON');
@@ -80,7 +80,7 @@ test('machine bearer alone cannot read or write anyone’s workspace',async()=>{
   assert.equal((await post('/api/workspace',{name:'workspace_list',args:{}},{'oai-authenticated-user-id':'spoof'})).status,401);
   assert.equal((await post('/api/workspace',{name:'workspace_create',args:{name:'Rejected browser bearer'}},{Authorization:'Bearer '+token})).status,401);
   const made=await post('/mcp',{jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_create',arguments:{name:'Shared saved project'}}},{Authorization:'Bearer '+token});assert.equal(made.status,200);assert.equal((await made.json()).result?.structuredContent?.project,undefined);
-  const rpc={jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_get',arguments:{project_id:p.id}}};
+  const rpc={jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_get',arguments:{project_id:'no-machine-grant'}}};
   assert.equal((await post('/mcp',rpc,{'oai-authenticated-user-id':'spoof'})).status,401);
   const fromMcp=await(await post('/mcp',rpc,{Authorization:'Bearer '+token})).json();assert.equal(fromMcp.result?.structuredContent?.project,undefined);
   assert.equal((await post('/api/workspace',{name:'workspace_list',args:{}},{Authorization:'Bearer '+token,Origin:'https://evil.invalid'})).status,403);
