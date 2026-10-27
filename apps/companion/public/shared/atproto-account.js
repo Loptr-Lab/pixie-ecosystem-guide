@@ -32,7 +32,7 @@
     input.setAttribute('aria-controls',list.id); input.setAttribute('aria-expanded','false');
     input.setAttribute('aria-describedby',[original.get('aria-describedby'),notice.id,status.id].filter(Boolean).join(' '));
     input.autocomplete = 'off'; input.spellcheck = false; input.setAttribute('autocapitalize','none');
-    let timer, controller, revision = 0, actors = [], active = -1, composing = false, destroyed = false;
+    let timer, controller, revision = 0, actors = [], active = -1, composing = false, destroyed = false, submitPointer = false;
     const listeners = [];
     function listen(target, type, fn, capture = false) { target.addEventListener(type,fn,capture); listeners.push(() => target.removeEventListener(type,fn,capture)); }
     function close() {
@@ -100,8 +100,16 @@
         highlight(event.key === 'ArrowDown' ? (active + 1) % actors.length : (active < 0 ? actors.length - 1 : (active - 1 + actors.length) % actors.length));
       } else if (event.key === 'Enter' && active >= 0) { event.preventDefault(); event.stopImmediatePropagation(); choose(active); }
     },true);
-    listen(input,'blur',() => { close(); status.textContent = ''; });
-    listen(doc,'pointerdown',event => { if (!wrapper.contains(event.target)) close(); });
+    // Closing suggestions/status between pointerdown and click can move the
+    // submit button out from under the pointer. Keep this gesture stable.
+    listen(input,'blur',() => { if (!submitPointer) { close(); status.textContent = ''; } });
+    listen(doc,'pointerdown',event => {
+      const button=event.target.closest?.('button,input[type=submit]');
+      submitPointer=event.button===0&&!!input.form&&button?.form===input.form&&button.type==='submit';
+      if (!submitPointer&&!wrapper.contains(event.target)) close();
+    },true);
+    const finishPointer=()=>{if(submitPointer)win.setTimeout(()=>{submitPointer=false;if(doc.activeElement!==input){close();status.textContent='';}},0);};
+    listen(doc,'pointerup',finishPointer,true);listen(doc,'pointercancel',finishPointer,true);
     const api = {close,destroy() { destroyed = true; close(); listeners.forEach(remove => remove()); wrapper.before(input); wrapper.remove(); original.forEach((value,key) => value === null ? input.removeAttribute(key) : input.setAttribute(key,value)); mounted.delete(input); }};
     mounted.set(input,api); return api;
   }

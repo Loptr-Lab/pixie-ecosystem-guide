@@ -295,3 +295,34 @@ legacy-data preservation, dark/light text contrast and restart recovery. Browser
 provider cryptography is synthetic; live OAuth and physical iPad acceptance remain
 required. Browser checks currently require separately available tooling and are
 not claimed as enforced GitHub checks.
+
+## Creator OS handoff — review only
+
+The selected private project can explicitly open the existing Creator OS at
+https://ibloud.github.io/pixie-creator-os/ after a consent prompt. Only project
+name/purpose and its last reviewed creative draft leave this tab. Exact origin
+and opened-window checks bind the exchange; no bearer, CSRF or OAuth token is
+sent. The returned draft is shown for review and saved as a creator note through
+the existing workspace API only after confirmation and a fresh verified-DID check.
+The granted project ID is fixed; a browser-supplied target cannot replace it.
+Creator OS retains media preparation, source-aware references and manual sharing.
+No new identity provider, PDS record, database, scope or automatic publication is
+introduced. Sequential retries of the identical receipt do not append twice.
+
+Both review candidates are required; current public Creator OS and pinned Railway
+production are unchanged. Reopen the same private project after sign-out to resume
+the saved draft, reselect media and review publishing again. Unsaved returns are
+not persistence. Logout/identity change revokes the handoff; exports already
+chosen by a user cannot be remotely revoked. A severed opener or failed connection
+must retain the existing file handoff rather than trust arbitrary origins.
+GitHub Pages shares ibloud.github.io across repositories; release review must
+accept that origin's trust boundary. No public deployment is authorized here.
+
+Local cross-application test: set PIXIE_CREATOR_ROOT to the reviewed existing
+Creator OS checkout, then run node tests/browser-creator.cjs with the existing
+Playwright/Chromium variables. The upstream provider is synthetic; physical iPad,
+live OAuth, private hosting and Railway backup/restart acceptance remain separate.
+The existing shared account picker also keeps a submit pointer gesture stable:
+closing suggestion results/status on blur must not move Continue before click.
+This changes no provider, session, metadata or OAuth permission. Original Site and
+static-origin identity regression fixtures remain required.
