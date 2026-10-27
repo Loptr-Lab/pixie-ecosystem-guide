@@ -1,6 +1,7 @@
 // Server-only durable adapter. Atomic writes, serialized operations, no public files.
 import {readFile,mkdir,writeFile,rename,chmod,unlink} from 'node:fs/promises';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {emptyWorkspace,validateWorkspace} from './workspace.mjs';
 export function createFileWorkspaceStore(filename){
  let queue=Promise.resolve();
@@ -16,4 +17,18 @@ export function createFileWorkspaceStore(filename){
 export function createMemoryWorkspaceStore(initial=emptyWorkspace()){
  let state=validateWorkspace(initial),queue=Promise.resolve();
  return {transaction(operation){const pending=queue.then(async()=>{const result=await operation(structuredClone(state));if(result.write)state=validateWorkspace(result.state);return result.result;});queue=pending.catch(()=>{});return pending;}};
+}
+
+// Server-controlled workspace namespaces. A caller never supplies a filename or
+// namespace, and the unowned legacy workspace.json is never claimed on login.
+export function createDidWorkspaceResolver(dataFile,{makeStore=createFileWorkspaceStore}={}){
+ if(typeof dataFile!=='string'||!path.isAbsolute(dataFile))throw Error('A private absolute workspace path is required.');
+ const root=path.join(path.dirname(dataFile),'users');
+ const cache=new Map();
+ return function forPrincipal(did){
+  if(typeof did!=='string'||!/^did:(plc:[a-z2-7]{24}|web:[A-Za-z0-9._%:-]+)$/.test(did))throw Error('A verified AT Protocol DID is required.');
+  const hash=createHash('sha256').update(did).digest('hex');
+  if(!cache.has(hash))cache.set(hash,makeStore(path.join(root,hash+'.json')));
+  return cache.get(hash);
+ };
 }
