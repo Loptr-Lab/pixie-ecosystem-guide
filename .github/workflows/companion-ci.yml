@@ -1,0 +1,58 @@
+name: PIXIE Companion review checks
+
+on:
+  pull_request:
+    paths:
+      - 'apps/companion/**'
+      - '.github/workflows/companion-ci.yml'
+  push:
+    branches:
+      - creator-workspace
+    paths:
+      - 'apps/companion/**'
+      - '.github/workflows/companion-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: companion-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  companion:
+    name: Companion tests, typecheck and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/companion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enable repository-pinned pnpm
+        run: corepack enable
+      - name: Install exact lockfile dependencies
+        run: corepack pnpm install --frozen-lockfile
+      - name: Unit and integration tests
+        run: corepack pnpm test
+      - name: Type check
+        run: corepack pnpm run typecheck
+      - name: Build static Companion
+        run: corepack pnpm run build
+      - name: Confirm generated entrypoint
+        run: test -s tangled-site/index.html
+
+  existing-guide:
+    name: Preserve existing guide
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+      - run: npm run build
