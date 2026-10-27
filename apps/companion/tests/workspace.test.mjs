@@ -123,3 +123,38 @@ test('the file guard excludes writers in a separate Node process',async()=>{
   await done;await pending;assert.equal(enteredTooEarly,false);
  }finally{child?.kill();await rm(dir,{recursive:true,force:true});}
 });
+
+test('source checks bound streamed bytes, cancel oversized bodies and preserve prior evidence on failure',async()=>{
+ let mode='success',cancelled=0,reads=0,calls=0;
+ const fetcher=async(url,options)=>{
+  calls++;assert.equal(new URL(url).origin,'https://api.github.com');assert.equal(options.redirect,'manual');assert.ok(options.signal instanceof AbortSignal);
+  if(mode==='success')return new Response('Original source text');
+  if(mode==='abort')return new Response(new ReadableStream({start(c){c.error(new DOMException('Synthetic source request aborted','AbortError'));}}));
+  if(mode==='redirect')return new Response(null,{status:302,headers:{location:'http://127.0.0.1/private'}});
+  return new Response(new ReadableStream({pull(c){reads++;c.enqueue(new Uint8Array(100001));},cancel(){cancelled++;}}),{headers:mode==='declared'?{'content-length':'200001'}:{}});
+ };
+ const s=createWorkspaceService(createMemoryWorkspaceStore(),{fetcher});let p=(await create(s)).project;
+ p=(await s.run('workspace_add_source',{project_id:p.id,title:'Source title',url:'https://github.com/Loptr-Lab/training/blob/main/README.md',excerpt:'Creator supplied text'})).project;
+ const args={project_id:p.id,source_id:p.sources[0].id};const first=await s.run('workspace_check_source',args);assert.equal(first.ok,true);assert.equal(first.source.excerpt,'Original source text');const at=first.source.checkedAt;
+ for(mode of ['stream','declared','abort','redirect']){
+  const before=cancelled,result=await s.run('workspace_check_source',args);assert.equal(result.ok,false,mode);assert.equal(result.source.checkState,'failed');assert.equal(result.source.excerpt,'Original source text');assert.equal(result.source.checkedAt,at);assert.equal(result.source.url,p.sources[0].url);assert.equal(result.source.title,'Source title');assert.match(result.notice,/failed.*retained/i);
+  if(mode==='stream'||mode==='declared')assert.equal(cancelled,before+1);
+ }
+ assert.ok(reads<=4,'oversized streams stop early rather than consuming indefinitely');
+ const before=calls;const unsupported=(await s.run('workspace_add_source',{project_id:p.id,title:'Not a fetch target',url:'https://127.0.0.1/private'})).project;
+ assert.equal((await s.run('workspace_check_source',{project_id:p.id,source_id:unsupported.sources.at(-1).id})).ok,false);assert.equal(calls,before,'user URL cannot become a private-network request');
+ mode='success';assert.equal((await s.run('workspace_check_source',args)).ok,true,'retry succeeds without replacing project');
+});
+
+test('HTTP and MCP report the same saved source failure rather than claiming a successful check',async()=>{
+ const {handleRpc}=await import('../lib/companion.mjs');const store=createMemoryWorkspaceStore();
+ const fetcher=async()=>new Response('Unavailable',{status:503});const shared=createWorkspaceService(store,{fetcher});
+ let p=(await create(shared)).project;p=(await shared.run('workspace_add_source',{project_id:p.id,title:'Recoverable source',url:'https://github.com/Loptr-Lab/training/blob/main/README.md',excerpt:'Keep this original excerpt'})).project;
+ const args={project_id:p.id,source_id:p.sources[0].id};const server=createCompanionServer({workspaceStore:store,allowLocalOwner:true,identityConfig:null,modelProvider:null,fetcher});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{
+  const http=await(await fetch('http://127.0.0.1:'+server.address().port+'/api/workspace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'workspace_check_source',args})})).json();assert.equal(http.ok,false);assert.equal(http.source.checkState,'failed');
+  const result=await handleRpc({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_check_source',arguments:args}},true,fetcher,{workspace:shared});
+  assert.equal(result.body.result.isError,true);const data=result.body.result.structuredContent;assert.equal(data.ok,false);assert.deepEqual(data.source,http.source);assert.match(result.body.result.content[0].text,/Source check failed/);
+  assert.deepEqual((await shared.run('workspace_get',{project_id:p.id})).project.sources,[data.source]);assert.equal(data.source.excerpt,'Keep this original excerpt');
+ }finally{await new Promise(r=>server.close(r));}
+});

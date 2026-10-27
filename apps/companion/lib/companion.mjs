@@ -115,6 +115,6 @@ export async function handleRpc(body,authenticated,fetcher=fetch,services={}){
  if(method==='tools/list')return {status:200,body:reply(id,{tools:toolDefinitions})};
  if(method!=='tools/call')return {status:200,body:error(id,-32601,'Method not found')};
  if(!authenticated)return {status:401,body:error(id,-32001,'Authenticated Site access is required.')};
- try{const result=await runTool(params.name,params.arguments||{},fetcher,services);return {status:200,body:reply(id,{content:[{type:'text',text:JSON.stringify(result)}],structuredContent:result})};}
+ try{const result=await runTool(params.name,params.arguments||{},fetcher,services);return {status:200,body:reply(id,{content:[{type:'text',text:(params.name==='workspace_check_source'&&result.notice?result.notice+'\n\n':'')+JSON.stringify(result)}],structuredContent:result,...(result.ok===false?{isError:true}:{})})};}
  catch(e){return {status:200,body:reply(id,{content:[{type:'text',text:e.message}],isError:true})};}
 }

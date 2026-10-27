@@ -139,3 +139,22 @@ test('foreign nested records, ownership claims and imports cannot escape the ses
   assert.equal((await run(a,'workspace_get',{project_id:ap.id})).project.name,'A private sentinel');
  }finally{await f.close();}
 });
+
+test('source checks cannot read or mutate a different DID workspace through HTTP or machine MCP',async()=>{
+ const f=await fixture();try{
+  const a=await login(f.base,cookieJar(),'owner'),b=await login(f.base,cookieJar(),'stranger');
+  const run=async(user,name,args)=>{const r=await f.post('/api/workspace',user.jar,user.csrf,{name,args});assert.equal(r.status,200);return r.json();};
+  const ap=(await run(a,'workspace_create',{name:'A evidence sentinel'})).project,bp=(await run(b,'workspace_create',{name:'B evidence sentinel'})).project;
+  const as=(await run(a,'workspace_add_source',{project_id:ap.id,title:'A source sentinel',url:'https://github.com/Loptr-Lab/training/blob/main/README.md',excerpt:'A private excerpt'})).project.sources[0];
+  const bs=(await run(b,'workspace_add_source',{project_id:bp.id,title:'B source sentinel',url:'https://github.com/Loptr-Lab/training/blob/main/README.md',excerpt:'B private excerpt'})).project.sources[0];
+  for(const [actor,victim,source] of [[a,bp,bs],[b,ap,as]]){
+   const args={project_id:victim.id,source_id:source.id};
+   const http=await f.post('/api/workspace',actor.jar,actor.csrf,{name:'workspace_check_source',args});assert.equal(http.status,404);assert.doesNotMatch(await http.text(),/private excerpt|source sentinel/);
+   for(const name of ['workspace_get','workspace_check_source']){
+    const rpc=await f.post('/mcp',actor.jar,actor.csrf,{jsonrpc:'2.0',id:1,method:'tools/call',params:{name,arguments:name==='workspace_get'?{project_id:victim.id}:args}},{Authorization:'Bearer '+token});
+    const result=await rpc.json();assert.equal(result.result.isError,true);assert.equal(result.result.structuredContent,undefined);assert.doesNotMatch(JSON.stringify(result),/private excerpt|source sentinel/);
+   }
+  }
+  assert.deepEqual((await run(a,'workspace_get',{project_id:ap.id})).project.sources,[as]);assert.deepEqual((await run(b,'workspace_get',{project_id:bp.id})).project.sources,[bs]);
+ }finally{await f.close();}
+});

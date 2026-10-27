@@ -6,10 +6,12 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
  const {createOwnerIdentity}=await import('../lib/owner-identity.mjs');
  const {createFileWorkspaceStore}=await import('../lib/workspace-store.mjs');
  const {createWorkspaceService}=await import('../lib/workspace.mjs');
+ const {handleRpc}=await import('../lib/companion.mjs');
  const {createHash}=require('node:crypto');
  const {syntheticProvider,fixtureFetch,owner,origin,host}=await import('./fixtures/owner-identity.mjs');
- const dir=await fs.mkdtemp(path.join(os.tmpdir(),'pixie-browser-owner-')),provider=syntheticProvider();let server,base;
- const start=async()=>{const identity=createOwnerIdentity({ownerDid:owner,secret:'c'.repeat(64),file:path.join(dir,'identity.enc'),oauthFactory:provider.factory});await identity.ready();server=createCompanionServer({identity,identityConfig:null,modelProvider:null,token:'synthetic-machine-only-'.repeat(3),workspaceStore:createFileWorkspaceStore(path.join(dir,'workspace.json')),workspaceFile:path.join(dir,'workspace.json')});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));base='http://127.0.0.1:'+server.address().port;};
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'pixie-browser-owner-')),provider=syntheticProvider();let server,base,sourceFails=true;
+ const sourceFetch=async(url,options)=>{assert.equal(new URL(url).origin,'https://api.github.com');assert.equal(options.redirect,'manual');return sourceFails?new Response('Synthetic unavailable',{status:503}):new Response('Synthetic fetched source text; not verified fact.');};
+ const start=async()=>{const identity=createOwnerIdentity({ownerDid:owner,secret:'c'.repeat(64),file:path.join(dir,'identity.enc'),oauthFactory:provider.factory});await identity.ready();server=createCompanionServer({fetcher:sourceFetch,identity,identityConfig:null,modelProvider:null,token:'synthetic-machine-only-'.repeat(3),workspaceStore:createFileWorkspaceStore(path.join(dir,'workspace.json')),workspaceFile:path.join(dir,'workspace.json')});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));base='http://127.0.0.1:'+server.address().port;};
  const browser=await chromium.launch({headless:true,executablePath:process.env.PIXIE_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox']});
  const mount=async storageState=>{const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,storageState});await context.route('**/*',async route=>{
   const request=route.request(),url=new URL(request.url());
@@ -30,6 +32,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
   await page.getByText('Your atmosphere identity is connected.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'My projects',exact:true}).click();const w=page.locator('.creator-workspace');
   await w.getByLabel('Project name',{exact:true}).fill('Synthetic one-sign-in project');await w.getByRole('button',{name:'Create and save project'}).click();await w.getByRole('heading',{name:'Synthetic one-sign-in project',exact:true}).waitFor();
+  await w.getByLabel('Source title',{exact:true}).fill('Synthetic source check');await w.getByLabel('Public source URL',{exact:true}).fill('https://github.com/Loptr-Lab/training/blob/main/README.md');await w.getByLabel('Relevant excerpt · supplied by you',{exact:true}).fill('Keep my supplied excerpt');await w.getByRole('button',{name:'Add saved source',exact:true}).click();
+  await w.getByRole('heading',{name:'Synthetic source check',exact:true}).waitFor();await w.getByRole('button',{name:'Check this public source',exact:true}).click();
+  await w.locator('[role=status]').getByText('Source check failed. Saved source and previous excerpt retained; no new verification is claimed.',{exact:true}).waitFor();
+  const scoped=createWorkspaceService(createFileWorkspaceStore(path.join(dir,'users',createHash('sha256').update(owner).digest('hex')+'.json')),{fetcher:sourceFetch});const selected=await scoped.run('workspace_list',{});const before=(await scoped.run('workspace_get',{project_id:selected.selectedId})).project;
+  const rpc=await handleRpc({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_check_source',arguments:{project_id:before.id,source_id:before.sources[0].id}}},true,sourceFetch,{workspace:scoped});assert.equal(rpc.body.result.isError,true);assert.deepEqual(rpc.body.result.structuredContent.source,before.sources[0]);assert.equal(before.sources[0].excerpt,'Keep my supplied excerpt');
+  sourceFails=false;await w.getByRole('button',{name:'Check this public source',exact:true}).click();await w.locator('[role=status]').getByText('Public source fetched; factual claims are not independently verified.',{exact:true}).waitFor();
+  const after=(await scoped.run('workspace_get',{project_id:before.id})).project;assert.equal(after.sources[0].checkState,'fetched');assert.equal(after.sources[0].excerpt,'Synthetic fetched source text; not verified fact.');
+  const fetched=await handleRpc({jsonrpc:'2.0',id:2,method:'tools/call',params:{name:'workspace_check_source',arguments:{project_id:before.id,source_id:before.sources[0].id}}},true,sourceFetch,{workspace:scoped});assert.equal(fetched.body.result.isError,undefined);assert.equal(fetched.body.result.structuredContent.ok,true);
   await w.getByLabel('Text size',{exact:true}).selectOption('24');await page.reload();await w.getByRole('heading',{name:'Synthetic one-sign-in project',exact:true}).waitFor();
   const saved=await context.storageState();await context.close();await new Promise(resolve=>server.close(resolve));await start();
   context=await mount(saved);page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));await page.goto(origin+'/#creator');await page.getByRole('heading',{name:'Synthetic one-sign-in project',exact:true}).waitFor();
@@ -58,6 +68,6 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
   await second.getByRole('heading',{name:'Independent second account',exact:true}).waitFor({state:'hidden'});
   assert.equal(await fs.readFile(path.join(dir,'workspace.json'),'utf8'),legacyBefore);
   assert.match(await fs.readFile(path.join(dir,'users',createHash('sha256').update(owner).digest('hex')+'.json'),'utf8'),/Synthetic one-sign-in project/);
-  assert.deepEqual(errors,[]);console.log('PASS: one Atmosphere sign-in, Secure/HttpOnly cookie, private project access, refresh, browser reopen + server restart, preferences, 320–820px reflow, account switching, cross-tab sign-out, dark/light text contrast and legacy-data preservation; provider/SDK cryptography mocked.');
+  assert.deepEqual(errors,[]);console.log('PASS: browser and explicitly scoped MCP share saved source failure/retry outcomes; one Atmosphere sign-in, Secure/HttpOnly cookie, private project access, refresh, browser reopen + server restart, preferences, 320–820px reflow, account switching, cross-tab sign-out, dark/light text contrast and legacy-data preservation; provider/SDK cryptography mocked.');
  }finally{await context?.close();await browser.close();if(server)await new Promise(resolve=>server.close(resolve));await fs.rm(dir,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

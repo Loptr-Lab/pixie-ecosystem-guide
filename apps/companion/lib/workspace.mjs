@@ -58,6 +58,17 @@ export const workspaceDefinitions=[
  spec('workspace_chat','Send ONLY selected project context to a configured external model, with explicit consent. No actions executed.',{...pid,message:str(6000,true),consent:{type:'boolean'}},['project_id','message','consent']),
 ];
 function argsFor(name,args){const d=workspaceDefinitions.find(d=>d.name===name);if(!d)fail('Unknown workspace operation.');keys(args,Object.keys(d.inputSchema.properties));for(const k of d.inputSchema.required)if(!(k in args))fail('Missing '+k+'.');for(const [k,v]of Object.entries(args)){const s=d.inputSchema.properties[k];if(s.type==='string')text(v,k,s.maxLength,!!s.minLength);if(s.type==='boolean'&&typeof v!=='boolean')fail('Invalid '+k+'.');if(s.enum&&!s.enum.includes(v))fail('Invalid '+k+'.');}if(args.project_id)id(args.project_id);return d;}
+// Read the decoded response incrementally: a post-hoc string limit does not bound retrieval.
+async function sourceText(response){
+ const limit=200000;
+ if(Number(response.headers.get('content-length'))>limit){await response.body?.cancel();throw Error('Source too large for this check.');}
+ if(!response.body)return '';
+ const reader=response.body.getReader(),decoder=new TextDecoder();let size=0,content='';
+ try{
+  while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>limit)throw Error('Source too large for this check.');content+=decoder.decode(value,{stream:true});}
+  return content+decoder.decode();
+ }catch(error){try{await reader.cancel();}catch{}throw error;}finally{reader.releaseLock();}
+}
 export function createWorkspaceService(store,{model=null,fetcher=fetch}={}){
  return {async run(name,args={}){
   const definition=argsFor(name,args);
@@ -84,9 +95,9 @@ export function createWorkspaceService(store,{model=null,fetcher=fetch}={}){
    else if(name==='workspace_clear'){if(args.confirmation!=='DELETE ALL SAVED PROJECTS')fail('Explicit deletion confirmation required.');state.projects=[];state.selectedId=null;result={cleared:true};}
    else if(name==='workspace_check_source'){
     const s=p.sources.find(s=>s.id===args.source_id);if(!s)fail('Source does not belong to this project.');const u=new URL(s.url);const match=u.origin==='https://github.com'&&/^\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/blob\/([^/]+)\/(.+)$/.exec(u.pathname);
-    try{if(!match)throw Error('Automatic checking currently supports public GitHub text-file links only. This link remains saved; open it to review manually.');const r=await fetcher('https://api.github.com/repos/'+match[1]+'/'+match[2]+'/contents/'+match[4]+'?ref='+encodeURIComponent(match[3]),{headers:{Accept:'application/vnd.github.raw+json','User-Agent':'PIXIE-Companion'},redirect:'manual',signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('Public source unavailable (HTTP '+r.status+').');const content=await r.text();if(content.length>200000)throw Error('Source too large for this check.');s.checkState='fetched';s.checkedAt=new Date().toISOString();s.lastError='';s.excerpt=content.slice(0,5000);log(p,'Public source fetched; factual claims not independently verified.');}
-    catch(error){s.checkState='failed';s.lastError=error instanceof Error?error.message:'Public source unavailable.';log(p,'Source check failed; saved source retained.');}
-    result={project:p,source:s};
+    try{if(!match)throw Error('Automatic checking currently supports public GitHub text-file links only. This link remains saved; open it to review manually.');const r=await fetcher('https://api.github.com/repos/'+match[1]+'/'+match[2]+'/contents/'+match[4]+'?ref='+encodeURIComponent(match[3]),{headers:{Accept:'application/vnd.github.raw+json','User-Agent':'PIXIE-Companion'},redirect:'manual',signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('Public source unavailable (HTTP '+r.status+').');const content=await sourceText(r);s.checkState='fetched';s.checkedAt=new Date().toISOString();s.lastError='';s.excerpt=content.slice(0,5000);log(p,'Public source fetched; factual claims not independently verified.');}
+    catch(error){s.checkState='failed';s.lastError=(error instanceof Error?error.message:'Public source unavailable.').slice(0,1000);log(p,'Source check failed; saved source retained.');}
+    result={project:p,source:s,ok:s.checkState==='fetched',notice:s.checkState==='fetched'?'Public source fetched; factual claims are not independently verified.':'Source check failed. Saved source and previous excerpt retained; no new verification is claimed.'};
    }else if(name==='workspace_chat'){
     if(!args.consent)fail('Confirm selected-project data may be sent to the configured model.');
     if(!model)throw new WorkspaceError('No model provider is configured. Projects, sources, tasks and handoffs remain usable. No AI response was generated.',503,'MODEL_UNAVAILABLE');

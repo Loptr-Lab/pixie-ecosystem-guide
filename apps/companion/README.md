@@ -326,3 +326,40 @@ The existing shared account picker also keeps a submit pointer gesture stable:
 closing suggestion results/status on blur must not move Continue before click.
 This changes no provider, session, metadata or OAuth permission. Original Site and
 static-origin identity regression fixtures remain required.
+
+
+## Source-check outcome and retrieval boundary
+
+The existing shared `workspace_check_source` operation returns the saved project,
+source record, an `ok` boolean and a readable `notice`. The browser displays that
+notice; MCP returns the same validated records and marks a failed check
+`isError: true` even though its failure record was saved successfully. A fetched
+page is not verified fact. Prior excerpt/date, source URL/title, creator notes
+and project identity survive a failed retry; `checkState: failed` and `lastError`
+distinguish the latest failed attempt. No backup/storage schema changes.
+
+Only the existing fixed public GitHub contents API is contacted, with manual
+redirect handling and a ten-second timeout. The response is now limited to
+200,000 decoded bytes **while reading**, not after allocating its entire text.
+Oversized bodies cancel their reader; rejected declared lengths cancel before
+reading. Failed, unsupported and aborted checks retain recoverable work. No
+arbitrary URL fetcher, additional provider, public-by-link store or run engine
+is added. Long-operation progress/user cancellation and quote matching remain
+unimplemented; this correction does not claim them.
+
+Pattern review: [Osiris MCP results](https://github.com/simplifaisoul/osiris/blob/085b2429b11b2b1af43880caaa088575cc98c14f/src/lib/oi/mcp.ts)
+separate readable summaries, structured data and tool errors. Its source quote
+matching checks text presence, not truth; its process-memory public run store is
+unsuitable for PIXIE's private continuity. Its shared service, injected provider
+and bounded network patterns informed this review. This correction independently
+extends PIXIE's existing code; no Osiris code was copied or dependencies added.
+Osiris is MIT-licensed, copyright 2026 simplifaisoul. If code is copied in future,
+retain its full copyright and license notice. Existing analytics, IP logging,
+surveillance UI and forecasting engine are not adopted.
+
+Verification extends existing workspace and identity test suites with streamed
+size/abort/recovery checks, matching HTTP/MCP outcomes on the same service state,
+and cross-user/ungranted-machine denial. Browser acceptance must show the saved
+failure state and notice without reporting success. The existing helper and
+central styles are unaffected. This is source review only; no deployment or
+live-provider acceptance is implied.
