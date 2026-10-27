@@ -19,13 +19,13 @@
     const input = element('input'); input.id = (container.id || 'pixie-identity') + '-handle'; input.type = 'text'; input.required = true; input.maxLength = 254; input.placeholder = 'Your name or handle';
     const label = element('label','Find your atmosphere account'); label.htmlFor = input.id;
     const submit = element('button','Continue to sign in'); submit.type = 'submit';
-    if(serverAuth){input.required=false;input.hidden=true;label.hidden=true;submit.textContent='Continue with Atmosphere';explanation.textContent='Sign in with the configured owner Atmosphere identity to open this private workspace.';}
+    if(serverAuth){submit.textContent='Continue with Atmosphere';explanation.textContent='Use your existing Atmosphere account to access your own private projects.';}
     form.append(label,input,submit);
     const connected = element('div'); connected.hidden = true;
     const identity = element('p'); const proof = element('details'); const proofTitle = element('summary','Identity details'); const didText = element('code'); proof.append(proofTitle,didText); const logout = element('button','Sign out'); logout.type = 'button'; connected.append(identity,proof,logout);
     const status = element('p'); status.className = 'account-hint'; status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
     const boundary = element('p','Sign-in confirms control of an identity. It does not enroll you, post anything, or synchronize progress. No email or publishing permission is requested.'); boundary.className = 'account-hint';
-    if(serverAuth)boundary.textContent='Only the configured owner can open private projects. No email or publishing permission is requested. Signing out does not delete saved work.';
+    if(serverAuth)boundary.textContent='Each account has its own private projects. No email or publishing permission is requested. Signing out does not delete saved work.';
     container.replaceChildren(explanation,form,connected,status,boundary);
     const picker = accounts.mount(input,options.picker);
     let client, initializing, session, profileController, deletedListener, busy = false, destroyed = false;
@@ -48,7 +48,7 @@
     }
     async function initialize() {
       if (!initializing) initializing = (async () => {
-        if(serverAuth){const result=await serverAuth.status();if(!destroyed){if(result?.session)signedIn(result.session);else signedOut('Sign in with the configured owner identity to open private projects.');}return;}
+        if(serverAuth){const result=await serverAuth.status();if(!destroyed){if(result?.session)signedIn(result.session);else signedOut('Sign in with your Atmosphere identity to open your private projects.');}return;}
         const library = await (options.loadSDK ? options.loadSDK() : import(SDK));
         if (destroyed) return;
         if (deletedListener) client?.removeEventListener?.('deleted',deletedListener);
@@ -64,10 +64,10 @@
     async function signIn(event) {
       event.preventDefault(); if (busy || !available) return;
       const handle = accounts.normalize(input.value);
-      if (!serverAuth&&!accounts.isHandle(handle)) { status.textContent = 'Choose a matching account or enter your full handle, such as name.bsky.social or your own domain.'; input.focus(); return; }
+      if (!accounts.isHandle(handle)) { status.textContent = 'Choose a matching account or enter your full handle, such as name.bsky.social or your own domain.'; input.focus(); return; }
       picker.close(); busy = true; submit.disabled = true; input.readOnly = true;
       status.textContent = 'Opening your identity provider…';
-      try { await initialize(); if (!destroyed) {if(serverAuth)await serverAuth.signIn();else await client.signIn(handle,{scope:'atproto',prompt:'consent'});} }
+      try { await initialize(); if (!destroyed) {if(serverAuth)await serverAuth.signIn(handle);else await client.signIn(handle,{scope:'atproto',prompt:'consent'});} }
       catch { if (!destroyed) status.textContent = 'Sign-in could not finish. Try again, or continue without an account.'; }
       finally { busy = false; submit.disabled = false; input.readOnly = false; }
     }
@@ -92,7 +92,7 @@
         .catch(() => { if (!destroyed) status.textContent = 'Your session could not be restored. Try signing in again.'; })
         .finally(() => { busy = false; submit.disabled = !!serverAuth&&!serverAuth.configured; });
     }
-    if(serverAuth&&!serverAuth.configured){submit.disabled=true;status.textContent='Owner Atmosphere sign-in is not configured on this server. Public guidance remains available.';}
+    if(serverAuth&&!serverAuth.configured){submit.disabled=true;status.textContent='Atmosphere sign-in is not configured on this server. Public guidance remains available.';}
     const refreshServer=()=>{if(!serverAuth||busy||destroyed)return;initializing=null;initialize().catch(()=>{if(!destroyed)signedOut('Your server session could not be verified. Try signing in again.');});};
     const storageChanged=event=>{if(event.key==='pixie.identity.logout')refreshServer();};
     win.addEventListener('focus',refreshServer);win.addEventListener('pageshow',refreshServer);win.addEventListener('storage',storageChanged);
