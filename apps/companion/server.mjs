@@ -9,6 +9,7 @@ import {createFileWorkspaceStore} from './lib/workspace-store.mjs';
 import {createModelProvider} from './lib/model-provider.mjs';
 import {serverFetch} from './lib/server-fetch.mjs';
 import {runTool,handleRpc} from './lib/companion.mjs';
+import {createOwnerIdentity,ownerIdentityConfiguration} from './lib/owner-identity.mjs';
 
 const defaultRoot=fileURLToPath(new URL('./tangled-site/',import.meta.url));
 const maximumBody=2_100_000;
@@ -22,7 +23,7 @@ async function body(request){
  for await(const chunk of request){length+=chunk.length;if(length>maximumBody)throw Object.assign(Error('Request too large'),{status:413});chunks.push(chunk);}
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
-export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,modelProvider,allowLocalOwner=false,readyCheck}={}){
+export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
  const store=workspaceStore||createFileWorkspaceStore(process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)));
  const model=modelProvider===undefined?createModelProvider({url:process.env.PIXIE_MODEL_URL,key:process.env.PIXIE_MODEL_API_KEY,model:process.env.PIXIE_MODEL_NAME,fetcher}):modelProvider;
  const services={workspace:createWorkspaceService(store,{model,fetcher})};
@@ -30,6 +31,19 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
   const json=(status,value)=>{response.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});response.end(JSON.stringify(value));};
   try{
    const url=new URL(request.url,'http://localhost');
+   if(url.pathname.startsWith('/api/auth/')||(url.pathname==='/'&&url.searchParams.has('state')&&(url.searchParams.has('code')||url.searchParams.has('error')))){
+    if(!identity){if(url.pathname==='/api/auth/session'&&request.method==='GET'){json(200,{service:'pixie-server-identity',configured:false,session:null});return;}json(503,{error:'Owner identity is not configured.'});return;}
+    try{
+     response.setHeader('Referrer-Policy','no-referrer');
+     if(url.pathname==='/api/auth/session'&&request.method==='GET'){json(200,await identity.status(request,response));return;}
+     if(url.pathname==='/'&&request.method==='GET'){await identity.callback(request,response,url.searchParams);response.writeHead(303,{Location:'/#account','Cache-Control':'no-store'});response.end();return;}
+     if(request.method==='POST'&&String(request.headers['content-type']||'').startsWith('application/json')){
+      if(url.pathname==='/api/auth/login'){json(200,await identity.login(request));return;}
+      if(url.pathname==='/api/auth/logout'){json(200,await identity.logout(request,response));return;}
+     }
+     json(405,{error:'Unsupported identity request.'});return;
+    }catch(error){json([400,401,403,429].includes(error.status)?error.status:503,{error:[400,401,403,429].includes(error.status)?error.message:'Identity verification is unavailable. No private access was granted.'});return;}
+   }
    if(url.pathname==='/ready'){if(!readyCheck){json(503,{ready:false});return;}try{await readyCheck();json(200,{ready:true});}catch{json(503,{ready:false});}return;}
    if(url.pathname==='/health'){json(200,{service:'pixie-companion',mode:'independent',mcp:token.length>=32?'bearer-auth configured':'disabled until configured'});return;}
    if(url.pathname.startsWith('/api/workspace')){
@@ -37,10 +51,12 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
     const localOwner=allowLocalOwner&&['127.0.0.1','::1'].includes(server.address()?.address)&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(request.socket.remoteAddress)&&['127.0.0.1','localhost'].includes(hostName);
     const origin=request.headers.origin;
     if((origin&&new URL(origin).host!==host)||request.headers['sec-fetch-site']==='cross-site'){json(403,{error:'Invalid workspace origin'});return;}
-    if(url.pathname==='/api/workspace/capabilities'&&request.method==='GET'){json(200,{localOwner,modelConfigured:!!model,modelEndpoint:model?new URL(process.env.PIXIE_MODEL_URL||'https://configured-provider.invalid').origin:null});return;}
+    let owner=null;try{owner=localOwner?null:await identity?.current(request);}catch{json(503,{error:'Owner identity verification is unavailable.'});return;}
+    if(url.pathname==='/api/workspace/capabilities'&&request.method==='GET'){json(200,{localOwner,authenticated:!!owner,identityConfigured:!!identity,csrf:owner?.csrf||null,modelConfigured:!!model,modelEndpoint:model?new URL(process.env.PIXIE_MODEL_URL||'https://configured-provider.invalid').origin:null});return;}
     if(url.pathname!=='/api/workspace'){json(404,{error:'Not found'});return;}
     if(request.method!=='POST'){response.writeHead(405,{Allow:'POST'});response.end();return;}
-    if(!localOwner&&!authorized(request.headers.authorization,token)){json(401,{error:'This private workspace requires the server connection key. No email account is required.'});return;}
+    if(!localOwner&&!owner){json(401,{error:'Sign in with the configured owner Atmosphere identity to open this private workspace.'});return;}
+    if(!localOwner)identity.csrf(request,owner);
     if(!String(request.headers['content-type']||'').startsWith('application/json')){json(415,{error:'Use application/json'});return;}
     const payload=await body(request);if(typeof payload.name!=='string'||!payload.name.startsWith('workspace_')){json(400,{error:'Use a workspace operation.'});return;}
     json(200,await runTool(payload.name,payload.args,fetcher,services));return;

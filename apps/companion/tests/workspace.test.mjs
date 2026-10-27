@@ -72,13 +72,14 @@ test('external model receives only selected context, credentials stay server-sid
  assert.equal(calls.length,1);assert.doesNotMatch(calls[0].body,/Other private project/);assert.match(calls[0].body,/Selected project/);
  assert.doesNotMatch(JSON.stringify((await s.run('workspace_export',{})).backup),/fixture-server-key/);
 });
-test('browser API and MCP share durable private state with independent authorization',async()=>{
+test('MCP owns machine bearer access; browser API never accepts that key',async()=>{
  const store=createMemoryWorkspaceStore();const token='fixture-only-'.repeat(4);const server=createCompanionServer({token,workspaceStore:store,modelProvider:null});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
  const post=(url,value,headers={})=>fetch(origin+url,{method:'POST',headers:{'content-type':'application/json',...headers},body:JSON.stringify(value)});
  try{
   assert.equal((await post('/api/workspace',{name:'workspace_list',args:{}},{'oai-authenticated-user-id':'spoof'})).status,401);
-  const made=await post('/api/workspace',{name:'workspace_create',args:{name:'Shared saved project'}},{Authorization:'Bearer '+token});assert.equal(made.status,200);const p=(await made.json()).project;
+  assert.equal((await post('/api/workspace',{name:'workspace_create',args:{name:'Rejected browser bearer'}},{Authorization:'Bearer '+token})).status,401);
+  const made=await post('/mcp',{jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_create',arguments:{name:'Shared saved project'}}},{Authorization:'Bearer '+token});assert.equal(made.status,200);const p=(await made.json()).result.structuredContent.project;
   const rpc={jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_get',arguments:{project_id:p.id}}};
   assert.equal((await post('/mcp',rpc,{'oai-authenticated-user-id':'spoof'})).status,401);
   const fromMcp=await(await post('/mcp',rpc,{Authorization:'Bearer '+token})).json();assert.equal(fromMcp.result.structuredContent.project.name,'Shared saved project');

@@ -13,6 +13,7 @@
     "check:browser": "node tests/browser-contract.cjs"
   },
   "dependencies": {
+    "@atproto/oauth-client-node": "0.5.10",
     "@base-ui/react": "^1.7.0",
     "@hookform/resolvers": "^5.7.1",
     "@shadcn/react": "^0.3.0",

@@ -60,9 +60,10 @@ The independent runner stores this private workspace in `.pixie-data/workspace.j
 (or `PIXIE_DATA_FILE`) with atomic writes and owner-only permissions. UI and
 `workspace_*` MCP tools use the same service and store. Back up the data file along
 with exports; Git does not back it up. Loopback development permits the local
-owner. Network access requires the private bearer key; production must use HTTPS,
-`NODE_ENV=production` and reviewed authentication. This is a single-owner store,
-not multi-user account isolation. Never share the owner key with testers.
+owner. Production browser access requires a server-verified Atmosphere session
+for the explicitly configured owner DID. The machine bearer key works only on
+MCP, never on browser workspace requests. Production requires HTTPS and
+`NODE_ENV=production`. This is a single-owner store, not multi-user isolation.
 
 A static-only web preview instead uses that browser/origin's IndexedDB, explicitly
 labelled in the interface. It survives reloads and normal browser restarts but not
@@ -100,18 +101,58 @@ This minimal bearer adapter is a tested transport boundary, not a completed
 multi-user OAuth installation flow. Real ChatGPT/other-client connection and
 per-client authorization/revocation require review before public service release.
 Do not expose an unconfigured endpoint or treat web identity sign-in as MCP auth.
-Atmosphere identity uses the existing browser OAuth SDK and exact reviewed HTTPS
-origins in `lib/identity-origin.mjs`. The original Site keeps its unchanged
+Atmosphere identity uses the existing AT Protocol provider, account panel and
+exact reviewed HTTPS origins in `lib/identity-origin.mjs`. The original Site
+keeps the browser SDK and its unchanged
 `/oauth-client-metadata.json` and root redirect. The Railway origin
 `https://pixie-project-companion-production.up.railway.app` uses the public
 `/oauth-client-metadata-railway.json` and its own root redirect. Other origins
 cannot start OAuth here and retain the link to the original Site. No Host header,
 query parameter or imported record selects a redirect. These are independent
-origin-bound sessions, not synchronized accounts or private-workspace access.
-No identity session replaces the private bearer key or includes it in browser
-assets. No provider, domain, credential or deployment configuration change is
-needed; after separately approved deployment, verify the Railway metadata URL
-returns its exact `client_id` and matching `redirect_uris` before signing in.
+origin-bound sessions, not synchronized accounts. Railway's root callback is now
+verified by the official server SDK, pinned at `@atproto/oauth-client-node@0.5.10`.
+Client ID, metadata, redirect and atproto-only scope remain unchanged. No provider
+or domain is added. Browser JavaScript cannot assert ownership or supply an issuer,
+redirect, DID or bearer credential to authorize private workspace operations.
+
+### Owner identity configuration
+
+Set `PIXIE_OWNER_DID` to the owner's independently verified, stable DID, never a
+display name, unverified handle or a DID taken from a login request. Maintainers
+must confirm the DID out of band before configuring it. Set `PIXIE_SESSION_SECRET`
+privately to 32 cryptographically random bytes encoded as 64 lowercase hex
+characters, distinct from `PIXIE_MCP_TOKEN`. Do not paste either secret into chat,
+GitHub, browser code or Vite/build variables. No real DID/key is committed here.
+Missing owner configuration disables private browser access; partial/invalid
+configuration fails closed. Machine MCP remains independently bearer-protected.
+
+The server verifies OAuth state, issuer, PKCE, token exchange and DPoP using the
+official SDK; only the configured DID can receive a random opaque `__Host-` cookie
+with Secure, HttpOnly and SameSite=Lax. Sessions expire after eight hours. Exact
+Host/Origin, browser-bound one-time OAuth state and per-session CSRF headers protect
+login, logout and workspace requests. The MCP bearer is rejected by the browser
+workspace endpoint, and a browser cookie cannot authorize MCP.
+
+OAuth keys/tokens, transaction state and hashed browser sessions are encrypted
+with AES-256-GCM in `identity.enc`, beside `PIXIE_DATA_FILE` on the existing private
+volume, using atomic writes and 0600 permissions. No database/service or workspace
+schema migration is introduced. Back up this encrypted file and its independent
+key securely; exclude it from shared exports. Keep one server/writer, as already
+required. Do not change the encryption key or delete/reset identity state to mask
+an error. Changing the owner DID invalidates existing browser authorization.
+
+Existing Railway browser-only OAuth sessions cannot safely be promoted into server
+authorization: one fresh Atmosphere sign-in is required. There is no second key
+entry. Existing Site sessions, creator files, IndexedDB and reading preferences
+are preserved. Server cookies/OAuth state survive restart with the same private
+file/key. Sign-out invalidates server browser sessions and pending logins first,
+then attempts provider revocation; local private access stays revoked if the
+provider is unavailable. Real provider revocation still requires live acceptance.
+
+`node tests/browser-owner.cjs` exercises one sign-in through the actual server
+cookie/workspace boundary with a synthetic provider, including restart, reopening,
+cross-tab sign-out, reading preferences and reflow. The older browser-identity
+fixture below checks the preserved browser-SDK path for Site/static use.
 
 `node tests/browser-identity.cjs` (with the same Playwright variables described
 below) exercises both origins' sign-in initiation, callback initialization,

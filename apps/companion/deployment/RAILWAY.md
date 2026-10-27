@@ -49,7 +49,11 @@ browser bundle at private Railway storage or place an owner token in build varia
    to make an ephemeral directory look persistent. Take a backup before imports.
 4. Privately configure `NODE_ENV=production`, `PIXIE_LOCAL_OWNER=0` and a random
    `PIXIE_MCP_TOKEN` of at least 32 characters. Do not send the token in chat,
-   URLs, screenshots, PRs or logs. No model key is required to run the workspace.
+   URLs, screenshots, PRs or logs. It is now exclusively a machine MCP credential.
+   Configure the independently verified `PIXIE_OWNER_DID` and separate private
+   `PIXIE_SESSION_SECRET` as specified in [owner identity configuration](../README.md#owner-identity-configuration).
+   No model key is required to run the workspace. No deployed settings are changed
+   by this source review; do not apply these settings or unpin production implicitly.
    See `production.env.example` for the non-secret variable list.
 5. Start `node scripts/start-production.mjs`. It checks auth configuration,
    writable mounted storage and saved JSON validity before listening on
@@ -61,7 +65,8 @@ browser bundle at private Railway storage or place an owner token in build varia
    edge. Verify HTTPS and plain-HTTP redirect before entering any credentials.
    Do not switch custom domains or publish a private service over plain HTTP.
    No public access to projects is permitted: UI loads publicly but workspace API
-   and MCP require the owner bearer. Do not distribute that key to public testers.
+   requires the verified owner cookie; MCP requires the separate machine bearer.
+   The browser has no connection-key form and never uses `PIXIE_MCP_TOKEN`.
    This is one owner/store, not per-user authorization. Readiness/health return
    only service availability, never project records.
 
@@ -79,8 +84,9 @@ state, not a guessed domain. Record timestamp, commit SHA and deployment ID:
 - `GET /ready` → 200; `/health` → 200, no private content.
 - Unauthenticated `POST /api/workspace` and `POST /mcp` → 401.
 - Cross-origin workspace requests → 403; forged Sites identity headers do not
-  replace the bearer token. Public `/api/companion` cannot read the workspace.
-- Enter owner key in the runtime browser connection form, never a URL or bundle.
+  replace verified owner authorization. Public `/api/companion` cannot read the workspace.
+- Complete the one existing Atmosphere sign-in with the configured owner identity.
+  Verify another DID cannot open private records. Do not enter a bearer key in the browser.
   Create a disposable synthetic project with a unique label; record its ID.
 - Authenticated MCP `workspace_get` of that exact ID returns the same saved data.
   The runtime browser and MCP share the one mounted JSON file. Inspect page
