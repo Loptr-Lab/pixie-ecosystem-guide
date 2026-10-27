@@ -5,7 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {timingSafeEqual} from 'node:crypto';
 import {createWorkspaceService} from './lib/workspace.mjs';
-import {createFileWorkspaceStore} from './lib/workspace-store.mjs';
+import {createFileWorkspaceStore,createDidWorkspaceResolver} from './lib/workspace-store.mjs';
 import {createModelProvider} from './lib/model-provider.mjs';
 import {serverFetch} from './lib/server-fetch.mjs';
 import {runTool,handleRpc} from './lib/companion.mjs';
@@ -27,6 +27,9 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
  const store=workspaceStore||createFileWorkspaceStore(process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)));
  const model=modelProvider===undefined?createModelProvider({url:process.env.PIXIE_MODEL_URL,key:process.env.PIXIE_MODEL_API_KEY,model:process.env.PIXIE_MODEL_NAME,fetcher}):modelProvider;
  const services={workspace:createWorkspaceService(store,{model,fetcher})};
+ const userStores=createDidWorkspaceResolver(process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)));
+ const userServices=new Map();
+ function forDid(did){if(!userServices.has(did))userServices.set(did,{workspace:createWorkspaceService(userStores(did),{model,fetcher})});return userServices.get(did);}
  const server=http.createServer(async(request,response)=>{
   const json=(status,value)=>{response.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});response.end(JSON.stringify(value));};
   try{
@@ -51,15 +54,15 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
     const localOwner=allowLocalOwner&&['127.0.0.1','::1'].includes(server.address()?.address)&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(request.socket.remoteAddress)&&['127.0.0.1','localhost'].includes(hostName);
     const origin=request.headers.origin;
     if((origin&&new URL(origin).host!==host)||request.headers['sec-fetch-site']==='cross-site'){json(403,{error:'Invalid workspace origin'});return;}
-    let owner=null;try{owner=localOwner?null:await identity?.current(request);}catch{json(503,{error:'Owner identity verification is unavailable.'});return;}
-    if(url.pathname==='/api/workspace/capabilities'&&request.method==='GET'){json(200,{localOwner,authenticated:!!owner,identityConfigured:!!identity,csrf:owner?.csrf||null,modelConfigured:!!model,modelEndpoint:model?new URL(process.env.PIXIE_MODEL_URL||'https://configured-provider.invalid').origin:null});return;}
+    let principal=null;try{principal=localOwner?null:await identity?.current(request);}catch{json(503,{error:'Owner identity verification is unavailable.'});return;}
+    if(url.pathname==='/api/workspace/capabilities'&&request.method==='GET'){json(200,{localOwner,authenticated:!!principal,identityConfigured:!!identity,csrf:principal?.csrf||null,modelConfigured:!!model,modelEndpoint:model?new URL(process.env.PIXIE_MODEL_URL||'https://configured-provider.invalid').origin:null});return;}
     if(url.pathname!=='/api/workspace'){json(404,{error:'Not found'});return;}
     if(request.method!=='POST'){response.writeHead(405,{Allow:'POST'});response.end();return;}
-    if(!localOwner&&!owner){json(401,{error:'Sign in with the configured owner Atmosphere identity to open this private workspace.'});return;}
-    if(!localOwner)identity.csrf(request,owner);
+    if(!localOwner&&!principal){json(401,{error:'Sign in with your Atmosphere identity to open your private workspace.'});return;}
+    if(!localOwner)identity.csrf(request,principal);
     if(!String(request.headers['content-type']||'').startsWith('application/json')){json(415,{error:'Use application/json'});return;}
     const payload=await body(request);if(typeof payload.name!=='string'||!payload.name.startsWith('workspace_')){json(400,{error:'Use a workspace operation.'});return;}
-    json(200,await runTool(payload.name,payload.args,fetcher,services));return;
+    json(200,await runTool(payload.name,payload.args,fetcher,localOwner?services:forDid(principal.did)));return;
    }
    if(url.pathname==='/api/companion'||url.pathname==='/mcp'){
     if(request.method!=='POST'){response.writeHead(405,{Allow:'POST'});response.end();return;}
@@ -71,7 +74,9 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
     // Never trust Sites identity headers on an independent public server.
     if(token.length<32){json(503,{error:'Independent MCP authentication is not configured.'});return;}
     if(!authorized(request.headers.authorization,token)){json(401,{error:'Bearer authentication required.'});return;}
-    const result=await handleRpc(await body(request),true,fetcher,services);
+    // Machine credentials never imply a browser user's project identity.
+    // Do not give a global workspace to an unscoped bearer token.
+    const result=await handleRpc(await body(request),true,fetcher,{workspace:{run:async()=>{throw Error('Machine workspace access requires an explicit principal grant.');}}});
     if(result.body===null){response.writeHead(result.status);response.end();}else json(result.status,result.body);
     return;
    }
