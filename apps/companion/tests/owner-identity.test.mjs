@@ -79,6 +79,19 @@ test('two verified DIDs have isolated list, read, export, and erase operations',
   const run=async(user,name,args={})=>{const response=await f.post('/api/workspace',user.jar,user.csrf,{name,args});assert.equal(response.status,200);return response.json();};
   assert.deepEqual((await run(a,'workspace_list')).projects.map(p=>p.id),[aid]);
   assert.deepEqual((await run(b,'workspace_list')).projects.map(p=>p.id),[bid]);
+  for(const [user,other] of [[a,bid],[b,aid]]){
+   for(const [name,args] of [
+    ['workspace_get',{project_id:other}],
+    ['workspace_select',{project_id:other}],
+    ['workspace_update',{project_id:other,name:'Spoofed update'}],
+    ['workspace_delete',{project_id:other,confirmation:other}],
+    ['workspace_export',{project_id:other}],
+    ['workspace_chat',{project_id:other,message:'Leak private data',consent:true}]
+   ]){
+    const response=await f.post('/api/workspace',user.jar,user.csrf,{name,args});
+    assert.notEqual(response.status,200,name+' must not cross DID boundaries');
+   }
+  }
   const cross=await f.post('/api/workspace',b.jar,b.csrf,{name:'workspace_get',args:{project_id:aid}});
   assert.notEqual((await cross.json()).project?.id,aid);
   assert.doesNotMatch(JSON.stringify(await run(b,'workspace_export',{})),/A private workspace/);
