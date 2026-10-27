@@ -92,13 +92,16 @@ in PR #5's deployment instructions. No Railway changes were made by this review.
   HTTP domains and no TCP proxies. There is no verified external runtime URL
   for browser, readiness or MCP acceptance. This is no longer an unavailable
   Railway-connection problem.
-- **Pending release risk:** staged patch `5776cfc6-60b5-4a4b-bfae-734e5eaed5ef`
-  removes the current region and adds one replica in `sfo`; the mounted volume
-  remains in `us-east4-eqdc4a`. The patch is not live. Do not apply it blindly
-  or move/detach the volume; resolve the placement mismatch before any release.
+- **Separate authorized staged correction:** after verifying live service/volume
+  placement, the unapplied `sfo` move in patch
+  `5776cfc6-60b5-4a4b-bfae-734e5eaed5ef` was replaced with
+  `sfo: null` and one replica in `us-east4-eqdc4a`. Read-back confirms effective
+  placement matches the live service and volume. Railway still lists two staged
+  fields (the explicit removal and replica restatement); the patch was not applied,
+  and the deployment, volume, domains and credentials were not changed.
 
-The smallest resolution path is to review that pending patch against the live
-volume and retain one writer with compatible placement, then obtain separate
+The smallest resolution path is to preserve the verified one-writer placement
+and review the remaining staged fields without applying them, then obtain separate
 owner approval for exposing the existing service through a Railway-generated
 HTTPS domain. Do not change custom DNS or create another service. Preserve a
 protected backup and the known deployment/configuration before any runtime change.
