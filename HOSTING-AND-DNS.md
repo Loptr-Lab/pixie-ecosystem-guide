@@ -20,12 +20,12 @@ run the current server endpoints. Those endpoints presently include
 headers. Moving their server requires an explicit replacement for authentication,
 deployment and acceptance testing, not just DNS or a copied HTML file.
 
-This repository currently publishes the guide source, not the complete companion
-application source. Full runtime-source publication and deployment synchronization
-remain a separate bounded task. Do not claim the server has migrated or that a
-source mirror is its new authority without an actual release handoff.
+Main currently contains the guide. The authoritative Companion module is under
+review in [PR #5](https://github.com/Loptr-Lab/pixie-ecosystem-guide/pull/5), at
+`apps/companion/`. This does not establish completed migration, plugin cutover
+or Tangled synchronization. See the dated runtime evidence below.
 
-## Verified blocker
+## Historical guide blocker — 18 October 2026
 
 At commit f595cce2546e8346737170227ab46a99ee2e3e7e the guide's build and artifact
 upload succeeded, but the deployment job returned 404 and explicitly requested
@@ -70,3 +70,47 @@ Official references:
 Keep the current companion URL operational. If guide publication or domain
 validation fails, retain existing links and diagnose the failed step. Do not
 change other project domains or remove a working runtime to force the cutover.
+
+## Companion runtime status — 27 October 2026
+
+Authenticated Railway reads supersede the earlier preparation-time access blocker
+in PR #5's deployment instructions. No Railway changes were made by this review.
+
+- Existing project: `patient-respect` (`3befc402-a30d-40e0-a75a-f40238a9944a`).
+  Production environment: `ea712c96-8716-4fa3-920f-dc70143f58c6`.
+- Companion service: `pixie-project-companion`
+  (`d0aa9bfc-a683-453d-a775-a22a2e87d0cc`), source pinned to PR #5 commit
+  `b1976e6bf0d39fefc212f5f634ef8d8995878a01`, root `/apps/companion`.
+- Deployment `e9738d3a-8ba2-43f6-8a1b-8abae2c75c58` reports **SUCCESS**.
+  Runtime logs show the volume mount and production-ready startup with private
+  storage checked and local-owner bypass disabled. Configured healthcheck is
+  `/ready`; an independent HTTP response has not been observed.
+- Live volume `pixie-companion-workspace`
+  (`90d791cf-67eb-4c69-8e6b-23a29c8ef2e6`) is mounted at `/data` in
+  `us-east4-eqdc4a`, matching the live single-replica deployment.
+- **Access blocker:** authenticated service state returns no generated or custom
+  HTTP domains and no TCP proxies. There is no verified external runtime URL
+  for browser, readiness or MCP acceptance. This is no longer an unavailable
+  Railway-connection problem.
+- **Pending release risk:** staged patch `5776cfc6-60b5-4a4b-bfae-734e5eaed5ef`
+  removes the current region and adds one replica in `sfo`; the mounted volume
+  remains in `us-east4-eqdc4a`. The patch is not live. Do not apply it blindly
+  or move/detach the volume; resolve the placement mismatch before any release.
+
+The smallest resolution path is to review that pending patch against the live
+volume and retain one writer with compatible placement, then obtain separate
+owner approval for exposing the existing service through a Railway-generated
+HTTPS domain. Do not change custom DNS or create another service. Preserve a
+protected backup and the known deployment/configuration before any runtime change.
+
+After authorization, follow the [existing deployment acceptance procedure](https://github.com/Loptr-Lab/pixie-ecosystem-guide/blob/b1976e6bf0d39fefc212f5f634ef8d8995878a01/apps/companion/deployment/RAILWAY.md#required-live-verification-before-acceptance):
+observe HTTPS and `/ready` 200, anonymous workspace/MCP 401, authenticated
+browser/MCP access to the same synthetic project, private-file rejection and
+recovery after an approved same-service restart/redeploy. Do not use real private
+records for acceptance. No secret values belong in documentation or logs.
+
+PR #5 records 52 passing local tests, typecheck, production builds and browser
+checks; these are reported source-review evidence, not a fresh run here or Railway
+restart proof. Physical iPad/Safari/VoiceOver, live browser/MCP authentication,
+external readiness and mounted-volume restart/redeploy recovery remain unverified.
+The current Site/plugin stays in place. The static preview is not the hosted MCP.
