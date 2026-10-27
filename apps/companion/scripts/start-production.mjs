@@ -5,6 +5,7 @@ import {mkdir,stat,realpath,open,unlink} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {createCompanionServer} from '../server.mjs';
 import {createFileWorkspaceStore} from '../lib/workspace-store.mjs';
+import {createOwnerIdentity,ownerIdentityConfiguration} from '../lib/owner-identity.mjs';
 const inside=(parent,child)=>{const relative=path.relative(parent,child);return relative!==''&&!relative.startsWith('..'+path.sep)&&relative!=='..'&&!path.isAbsolute(relative);};
 export function productionConfiguration(env){
  if(env.NODE_ENV!=='production')throw Error('NODE_ENV must be production.');
@@ -16,21 +17,24 @@ export function productionConfiguration(env){
  const port=Number(env.PORT||4173);if(!Number.isInteger(port)||port<0||port>65535)throw Error('Invalid PORT.');
  return {mount,file,port,host:'0.0.0.0',token:env.PIXIE_MCP_TOKEN};
 }
-export async function startProduction(env=process.env){
+export async function startProduction(env=process.env,{oauthFactory}={}){
  const config=productionConfiguration(env);
  if(!(await stat(config.mount)).isDirectory())throw Error('The configured volume is unavailable.');
  await mkdir(path.dirname(config.file),{recursive:true,mode:0o700});
  const actualMount=await realpath(config.mount),actualParent=await realpath(path.dirname(config.file));
  if(actualParent!==actualMount&&!inside(actualMount,actualParent))throw Error('Storage resolves outside its volume.');
  const store=createFileWorkspaceStore(config.file);
+ const identityConfig=ownerIdentityConfiguration(env);
+ const identity=identityConfig?createOwnerIdentity({...identityConfig,oauthFactory}):null;
  const readyCheck=async()=>{
   await store.transaction(async state=>({result:true,write:false,state}));
+  await identity?.ready();
   const probe=path.join(actualParent,'.ready-'+randomUUID());let handle;
   try{handle=await open(probe,'wx',0o600);await handle.sync();}
   finally{if(handle){await handle.close();await unlink(probe);}}
  };
  await readyCheck();
- const server=createCompanionServer({token:config.token,workspaceStore:store,allowLocalOwner:false,readyCheck});
+ const server=createCompanionServer({token:config.token,workspaceStore:store,allowLocalOwner:false,readyCheck,identity,identityConfig:null});
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(config.port,config.host,resolve);});
  return server;
 }

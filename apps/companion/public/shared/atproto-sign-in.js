@@ -6,6 +6,7 @@
   function mount(container, options = {}) {
     if (mounted.has(container)) return mounted.get(container);
     const doc = container.ownerDocument, win = doc.defaultView, accounts = root.PixieAccounts;
+    const serverAuth = options.serverAuth;
     const clientId = new URL(container.dataset.clientId), redirect = new URL(container.dataset.redirectUri);
     const available = clientId.protocol === 'https:' && clientId.origin === redirect.origin && redirect.origin === win.location.origin;
     const metadata = {client_id:clientId.href,client_name:container.dataset.appName,client_uri:redirect.href,
@@ -18,11 +19,13 @@
     const input = element('input'); input.id = (container.id || 'pixie-identity') + '-handle'; input.type = 'text'; input.required = true; input.maxLength = 254; input.placeholder = 'Your name or handle';
     const label = element('label','Find your atmosphere account'); label.htmlFor = input.id;
     const submit = element('button','Continue to sign in'); submit.type = 'submit';
+    if(serverAuth){input.required=false;input.hidden=true;label.hidden=true;submit.textContent='Continue with Atmosphere';explanation.textContent='Sign in with the configured owner Atmosphere identity to open this private workspace.';}
     form.append(label,input,submit);
     const connected = element('div'); connected.hidden = true;
     const identity = element('p'); const proof = element('details'); const proofTitle = element('summary','Identity details'); const didText = element('code'); proof.append(proofTitle,didText); const logout = element('button','Sign out'); logout.type = 'button'; connected.append(identity,proof,logout);
     const status = element('p'); status.className = 'account-hint'; status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
     const boundary = element('p','Sign-in confirms control of an identity. It does not enroll you, post anything, or synchronize progress. No email or publishing permission is requested.'); boundary.className = 'account-hint';
+    if(serverAuth)boundary.textContent='Only the configured owner can open private projects. No email or publishing permission is requested. Signing out does not delete saved work.';
     container.replaceChildren(explanation,form,connected,status,boundary);
     const picker = accounts.mount(input,options.picker);
     let client, initializing, session, profileController, deletedListener, busy = false, destroyed = false;
@@ -45,6 +48,7 @@
     }
     async function initialize() {
       if (!initializing) initializing = (async () => {
+        if(serverAuth){const result=await serverAuth.status();if(!destroyed){if(result?.session)signedIn(result.session);else signedOut('Sign in with the configured owner identity to open private projects.');}return;}
         const library = await (options.loadSDK ? options.loadSDK() : import(SDK));
         if (destroyed) return;
         if (deletedListener) client?.removeEventListener?.('deleted',deletedListener);
@@ -60,16 +64,16 @@
     async function signIn(event) {
       event.preventDefault(); if (busy || !available) return;
       const handle = accounts.normalize(input.value);
-      if (!accounts.isHandle(handle)) { status.textContent = 'Choose a matching account or enter your full handle, such as name.bsky.social or your own domain.'; input.focus(); return; }
+      if (!serverAuth&&!accounts.isHandle(handle)) { status.textContent = 'Choose a matching account or enter your full handle, such as name.bsky.social or your own domain.'; input.focus(); return; }
       picker.close(); busy = true; submit.disabled = true; input.readOnly = true;
       status.textContent = 'Opening your identity provider…';
-      try { await initialize(); if (!destroyed) await client.signIn(handle,{scope:'atproto',prompt:'consent'}); }
+      try { await initialize(); if (!destroyed) {if(serverAuth)await serverAuth.signIn();else await client.signIn(handle,{scope:'atproto',prompt:'consent'});} }
       catch { if (!destroyed) status.textContent = 'Sign-in could not finish. Try again, or continue without an account.'; }
       finally { busy = false; submit.disabled = false; input.readOnly = false; }
     }
     async function signOut() {
       if (!session || busy) return; busy = true; logout.disabled = true;
-      try { await client.revoke(session.did); if (!destroyed) { signedOut('Signed out of this site. Your public records and GitHub work are unchanged.'); input.focus(); } }
+      try { const result=serverAuth?await serverAuth.signOut():await client.revoke(session.did); if (!destroyed) { signedOut(result?.revoked===false?'Signed out of this workspace. Provider revocation could not be confirmed; you can revoke the app through your identity provider.':'Signed out of this site. Your public records and GitHub work are unchanged.'); (serverAuth?submit:input).focus(); } }
       catch { if (!destroyed) status.textContent = 'Could not revoke the session. Try signing out again, or revoke this app through your identity provider.'; }
       finally { busy = false; logout.disabled = false; }
     }
@@ -81,14 +85,18 @@
     const params = new URLSearchParams(win.location.search);
     let restore = false; try { restore = available && win.localStorage.getItem(key) === '1'; } catch {}
     const callback = available && params.has('state') && (params.has('code') || params.has('error'));
-    if (callback || restore) {
+    if (callback || restore || serverAuth) {
       if (callback) { const details = container.closest('details'); if (details) details.open = true; }
       status.textContent = 'Checking your session…'; busy = true; submit.disabled = true;
       initialize().then(() => { if (!destroyed && !session) signedOut('No active session. Sign in when you need it.'); })
         .catch(() => { if (!destroyed) status.textContent = 'Your session could not be restored. Try signing in again.'; })
-        .finally(() => { busy = false; submit.disabled = false; });
+        .finally(() => { busy = false; submit.disabled = !!serverAuth&&!serverAuth.configured; });
     }
-    const api = {destroy(){destroyed = true; profileController?.abort(); client?.removeEventListener?.('deleted',deletedListener); picker.destroy(); form.removeEventListener('submit',signIn); logout.removeEventListener('click',signOut); mounted.delete(container);}};
+    if(serverAuth&&!serverAuth.configured){submit.disabled=true;status.textContent='Owner Atmosphere sign-in is not configured on this server. Public guidance remains available.';}
+    const refreshServer=()=>{if(!serverAuth||busy||destroyed)return;initializing=null;initialize().catch(()=>{if(!destroyed)signedOut('Your server session could not be verified. Try signing in again.');});};
+    const storageChanged=event=>{if(event.key==='pixie.identity.logout')refreshServer();};
+    win.addEventListener('focus',refreshServer);win.addEventListener('pageshow',refreshServer);win.addEventListener('storage',storageChanged);
+    const api = {destroy(){destroyed = true; win.removeEventListener('focus',refreshServer);win.removeEventListener('pageshow',refreshServer);win.removeEventListener('storage',storageChanged);profileController?.abort(); client?.removeEventListener?.('deleted',deletedListener); picker.destroy(); form.removeEventListener('submit',signIn); logout.removeEventListener('click',signOut); mounted.delete(container);}};
     mounted.set(container,api); return api;
   }
   root.PixieIdentity = {mount};

@@ -1,10 +1,11 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {identityConfiguration,siteIdentityOrigin} from '../lib/identity-origin.mjs';
+import {serverIdentity} from '../lib/server-identity-browser.mjs';
 
 type IdentityUI = {destroy:()=>void};
 declare global {
- interface Window { PixieIdentity?: {mount:(element:HTMLElement)=>IdentityUI}; }
+ interface Window { PixieIdentity?: {mount:(element:HTMLElement,options?:Record<string,unknown>)=>IdentityUI}; }
 }
 const loads = new Map<string,Promise<void>>();
 const publishedIdentity=identityConfiguration(siteIdentityOrigin)!;
@@ -22,12 +23,13 @@ export default function Account(){
   let disposed=false,ui:IdentityUI|undefined,observer:MutationObserver|undefined;
   const open=()=>{if(window.location.hash==='#account'&&details.current)details.current.open=true;};open();
   window.addEventListener('hashchange',open);
-  loadScript('./shared/atproto-account.js?v=1').then(()=>loadScript('./shared/atproto-sign-in.js?v=1')).then(()=>{
+  loadScript('./shared/atproto-account.js?v=1').then(()=>loadScript('./shared/atproto-sign-in.js?v=2')).then(async()=>{
+   const serverAuth=await serverIdentity();
    if(!disposed&&panel.current){
     const config=identityConfiguration(window.location.origin)||publishedIdentity;
     panel.current.dataset.clientId=config.clientId;
     panel.current.dataset.redirectUri=config.redirectUri;
-    ui=window.PixieIdentity?.mount(panel.current);
+    ui=window.PixieIdentity?.mount(panel.current,{serverAuth});
     const form=panel.current.querySelector('form');
     if(form){observer=new MutationObserver(()=>setConnected(form.hidden));observer.observe(form,{attributes:true,attributeFilter:['hidden']});setConnected(form.hidden);}
    }
