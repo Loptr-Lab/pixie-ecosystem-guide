@@ -7,7 +7,7 @@ const guides={
 };
 export function getGuide(mode){return guides[mode]||guides.resume;}
 export const pixieDoors=[
- {name:'Find help with Made-Sick and PIXIE',url:'https://pixie-project-companion.ibloud-ivxx.chatgpt.site/#find-help',note:'Source-linked discovery, local enquiry preparation and portable follow-up.'},
+ {name:'Find help with Made-Sick and PIXIE',url:'https://pixie-project-companion-production.up.railway.app/#find-help',note:'Source-linked discovery, local enquiry preparation and portable follow-up.'},
  {name:'Start with Loptr Lab training',url:'https://loptr-lab.github.io/training/',note:'Training entry point for our ecosystem.'},
  {name:'Discover worlds',url:'https://50ways.loptrlab.com/pixie/demo/index.html',note:'Public discovery prototype and Story Finder routes.'},
  {name:'Creator workspace',url:'https://ibloud.github.io/pixie-creator-os/',note:'Prepare work locally for manual sharing.'},

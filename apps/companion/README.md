@@ -1,3 +1,17 @@
+## Canonical runtime amendment — owner direction, 27 October 2026
+
+The existing Railway deployment is PIXIE Companion's one canonical application
+runtime: https://pixie-project-companion-production.up.railway.app/.
+The old ChatGPT Site is a migration source pending acceptance and explicit
+retirement approval, not a permanent second Companion. ChatGPT connects as a
+client with separate permissions. Guide/Creator navigation is prepared for this
+coordinated cutover; auth metadata and original adapters are intentionally retained
+until their dependencies are resolved. See the existing
+[cutover inventory and gates](deployment/RAILWAY.md#one-canonical-companion--coordinated-cutover-owner-direction-27-october-2026).
+No production data transfer, client update or Site retirement is executed here.
+Dated statements below about the Site being live are historical transition status,
+not a decision to maintain multiple writable application instances.
+
 # PIXIE Project Companion — independent source review
 
 This is the recovered Companion application module inside the existing PIXIE
@@ -267,7 +281,7 @@ The existing guide root build is untouched. Use the fail-closed production launc
 local-owner bypass disabled and a real persistent volume. See
 [deployment/RAILWAY.md](deployment/RAILWAY.md) for exact existing-service settings,
 non-secret variables, verification evidence, rollback and current access blockers.
-Production remains pinned to `9e83676856e38f1f34a17ce5bf44fe631b8d2f15`; this review does not release the candidate.
+The 9e836768 pin below is a historical rollback reference. Use the dated current release in deployment/RAILWAY.md and re-read Railway before any approved release; this review does not release the candidate.
 The static Vercel preview continues to use browser storage and hosts no MCP.
 
 ## Corrective security review

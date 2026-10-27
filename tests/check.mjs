@@ -106,3 +106,12 @@ if (existsSync(outputRoot)) {
   for (const [, id] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.includes(id), `Local navigation must resolve: ${id}`);
   assert.ok(readFileSync(new URL('assets/make-room-for-the-work.pdf', outputRoot)).subarray(0, 5).equals(Buffer.from('%PDF-')), 'Download must be a PDF.');
 }
+
+
+// Canonical navigation is separate from retained legacy OAuth/MCP migration evidence.
+const canonical='https://pixie-project-companion-production.up.railway.app';
+const legacy='pixie-project-companion.ibloud-ivxx.chatgpt.site';
+for(const file of ['../index.html','../assets/make-room-for-the-work.html','../assets/make-room-for-the-work.pdf']){
+ const content=readFileSync(new URL(file,import.meta.url)).toString('latin1').replace(/\\([0-7]{1,3})/g,(_,octal)=>String.fromCharCode(parseInt(octal,8)));
+ assert.ok(content.includes(canonical),file+' routes to canonical Companion');assert.ok(!content.includes(legacy),file+' has no active old Site navigation');
+}

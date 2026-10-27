@@ -1,3 +1,97 @@
+# One canonical Companion — coordinated cutover, owner direction 27 October 2026
+
+The sole intended Companion application instance is the **existing Railway**
+service: https://pixie-project-companion-production.up.railway.app/.
+The guide is informational navigation; Creator OS is the specialized creative
+workspace; a ChatGPT connection is a client, not another application instance.
+The old ChatGPT Site is a migration source to retire after acceptance and explicit
+owner approval. Keeping two independently writable public Companions is not the
+finished state. This source amendment does not execute a cutover or retire anything.
+
+## Current observed release and candidate
+
+Railway readback on 27 October: deployment `9dd33fcd-7361-4231-944d-79e4374cd93b`,
+source `fbd7d3fadbcca4fdf0f92d4713249d84d4d7babd`, SUCCESS. PR #5 candidate
+parent is `5fe4f0c680546444a455435a7b4d4fbdb93d7e66` (84-test source-check
+correction). The helper/navigation amendment is reviewed on top of that parent.
+Re-read the actual service before release; these are dated observations, not a
+future pin or deployment authorization. Existing /data volume is in US East;
+do not apply the unrelated staged region/replica patch. Owner supplied the explicit
+“Auto deploy is disabled” / Enable source state; Wait for CI alone is insufficient.
+
+## Dependency inventory and prepared navigation
+
+| Surface / dependency | Source evidence and disposition |
+| --- | --- |
+| Companion helper | app/pixie-helper.tsx and lib/pixie-guide.mjs; one persistent menu, conditional restore, canonical Railway enquiry link. Footer content moves into that menu |
+| Public guide | root index.html and assets/make-room-for-the-work.html/.pdf; ordinary navigation targets Railway. The root build still produces only the guide, not another backend |
+| Creator OS | PR #62 registry/My PIXIE already point to Railway; this amendment corrects the two remaining Network Intelligence enquiry routes in network-intelligence.js. No origin checks are broadened |
+| Original Site OAuth identity | lib/identity-origin.mjs, public/oauth-client-metadata.json and shared atproto-sign-in.js preserve the Site client ID and exact Site callback origin. Retained migration dependency, not navigation. Do not rewrite or invalidate in this source cutover |
+| Railway OAuth identity | separate existing oauth-client-metadata-railway.json and server identity implementation; origin-specific client/callback tested independently. Existing accounts retain their DID, but browser sessions do not cross origins |
+| Original Site MCP | Site /mcp, app/mcp/route.ts and lib/site-access.mjs use host-injected identity headers; installed connection's endpoint migration is NOT verified. Recovered adapters/tests retained until replacement client acceptance and retirement approval |
+| Railway MCP | server.mjs /mcp requires the separate machine bearer. It rejects spoofed Site headers and unscoped private workspace access. Do not paste a token into browser/UI or simply replace the installed endpoint. Private client access needs an explicitly reviewed principal-grant design; none is enabled here |
+| Site browser records | recovered workspace-browser.mjs uses origin-local IndexedDB pixie-creator-workspace/records/workspace; follow-up/task drafts may be in-tab or exported files. Inspect the actual user's Site storage/export before retirement. Recovered routes do not establish that every live Site record has been inventoried |
+| Railway private records | existing mounted volume, server-selected hashed DID workspace files, encrypted identity file, possible unowned legacy workspace and lock files. Verify actual PIXIE_DATA_FILE and adjacent persistent artifacts privately; do not assume the sample path or workspace.json is the only file |
+| OAuth/browser secrets | origin-local sessions are not a transferable workspace backup. Never put OAuth tokens, identity secrets, machine credentials, private records or decryption keys into GitHub/checkpoints |
+| Source recovery/history | source-recovery.json, original Site adapter tests and dated hosting records are provenance, not evidence of ongoing dual-runtime authorization. Preserve history; do not delete assets to hide dependencies |
+
+No live Site login/retrieval was attempted. No account/record/session sync is
+inferred. Remaining Site URLs in auth metadata, origin allowlists, tests, dated
+hosting records and this inventory are intentional migration dependencies.
+
+## Exact cutover gates (maintainer executes only after separate approval)
+
+1. **Freeze source and release evidence:** record PR #5 and Creator #62 SHA, current
+   service/deployment, region/volume, active client/tool endpoints and autodeploy
+   state. Keep existing release and backup rules below. A static/protected preview
+   is not the authenticated production workspace or another canonical instance.
+2. **Verified backup:** back up all identified Railway persistence through an
+   approved private owner-controlled route; encrypt cloud copies, keep keys
+   separate, record a manifest/integrity hashes and prove isolated restoration.
+   This backup remains unverified in current evidence; no private transfer is
+   performed here. Inventory/export Site browser and any other live persistence
+   separately. Absence from recovered source is not absence of live data.
+3. **Explicit transfer if required:** identify whose data each Site export contains;
+   have that owner review its contents and destination DID. Existing validated
+   workspace_import supports reject-conflicts/copy-conflicts; compare project,
+   task, source and handoff IDs/counts/content before and after an isolated restore,
+   then the approved import. Verify A/B separation and source provenance. Leave
+   unowned legacy data untouched until ownership is explicitly resolved. No first-
+   login assignment, copying cookies/tokens, or automatic cross-origin import.
+4. **Browser acceptance:** approve compatible source at the existing Railway service
+   and fixed Creator URL, then test one Atmosphere sign-in per account, callbacks,
+   private save/reopen, consent-bound Creator handoff, logout/switching, source-
+   failure recovery and approved restart persistence. Physical iPad Safari,
+   VoiceOver, keyboard, Files and safe-area checks need recorded live acceptance.
+5. **ChatGPT client dependency:** inventory the installed connection separately.
+   Verify public tool calls on Railway with the authorized client auth mechanism;
+   preserve the current endpoint until the owner separately approves its update.
+   Prove unauthorized/private A/B denial and document unsupported private MCP
+   operations. No public installation URL or automatic context transfer is claimed.
+6. **Coordinated navigation:** review/publish the prepared guide, ebook, Companion
+   and Creator routes together under their existing PRs. Static links cannot move
+   sessions or data. This source work does not publish those changes.
+7. **Retirement after acceptance:** obtain explicit owner approval. If the old host
+   supports a route-preserving redirect, verify it; otherwise use a clear moved
+   notice to the canonical Railway app. Preserve reviewed exports/archives. Verify
+   callbacks and installed clients no longer depend on the Site before removing
+   its active writable runtime and obsolete integrations. Do not delete the Site
+   first or claim redirect support without checking it.
+8. **Final proof:** ordinary entry paths reach one Railway Companion, private
+   records remain isolated and durable, and the old host has no independently
+   writable application. Until that evidence exists, consolidation is incomplete.
+
+## Evidence already available and still missing
+
+Source-check baseline: 84 tests, typecheck/build, independent guide build and
+synthetic browser/isolation/handoff checks passed at 5fe4f0c. Creator source at
+4ff005f passed its 62-case CI and user confirmed My Apps add/launch/persistence/
+remove. These are not verified backups, Site export/transfer, installed-client
+migration, physical iPad acceptance or retirement evidence. Re-run the affected
+checks for the new helper/navigation candidate and record its exact SHA in PR #5.
+
+---
+
 # Existing Companion Railway deployment
 
 This config starts the existing `apps/companion/server.mjs`; it does not create a
@@ -80,7 +174,7 @@ files and verify no active writer before removing a confirmed stale lock under
 separate approval. Never automatically break locks or reset private storage.
 See the [corrective review](../README.md#corrective-security-review).
 
-Production is pinned to `9e83676856e38f1f34a17ce5bf44fe631b8d2f15`, deployment
+Historical rollback reference (superseded; do not treat as current production): `9e83676856e38f1f34a17ce5bf44fe631b8d2f15`, deployment
 `96f284b4-a179-4421-81cc-62ba849f7743`. Preserve this rollback reference and the
 existing volume in `us-east4-eqdc4a`. Do not apply either pending region/replica
 change. Candidate code review does not authorize unpinning, changing secrets or
@@ -123,6 +217,6 @@ backup. Roll back to a prior known-safe deployment on the same service with the
 same volume; do not delete the volume or downgrade into an incompatible schema.
 This release uses the existing workspace schema. If readiness fails, stop and
 repair/restore a reviewed backup; never replace saved data with an empty workspace.
-The ChatGPT Site remains the existing working fallback; do not retire it.
+The old ChatGPT Site is a temporary migration source, not a permanent second Companion. Keep it intact until the cutover gates below pass and the owner explicitly authorizes retirement.
 
 Current Railway service and volume must be checked against connected Railway state before any deployment; do not assume this documentation is live proof of the candidate revision. Never apply unrelated staged configuration changes.

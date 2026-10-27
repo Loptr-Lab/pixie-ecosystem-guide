@@ -24,3 +24,17 @@ Applies to this repository's `apps/companion` changes. Read these before editing
 Cite the exact documentation read, files changed, constraints preserved, test commands/results, CI commit SHA, and remaining unverified acceptance gates. Report deviations as failures, not as progress. No claims of deployment without verified Railway state.
 
 These rules are project constraints, not new product decisions. Any change to them requires explicit owner approval and source-linked review.
+
+
+## Canonical runtime and helper — owner amendment, 27 October 2026
+
+One Companion application instance: the existing Railway service. The old
+ChatGPT Site is a migration source pending verified data/client cutover and
+explicit retirement approval, not a second permanent app. ChatGPT is a client.
+Preserve original OAuth/MCP dependencies until resolved; no automatic session or
+record synchronization. Keep a single persistent contextual helper, with its
+restore control visible only while hidden. ChatGPT instructions belong inside
+that menu, not in duplicate footer/owner-only setup controls. Use explicit
+project-information consent language, not a blanket claim of no private access.
+Use deployment/RAILWAY.md's existing cutover gates; consolidation is incomplete
+until one canonical runtime serves users and the old writable runtime is retired.

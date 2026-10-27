@@ -1,3 +1,17 @@
+## Current owner direction — 27 October 2026
+
+The one canonical Companion application runtime is the existing Railway service:
+https://pixie-project-companion-production.up.railway.app/.
+This repository's public guide is navigation, and ChatGPT is a client integration.
+The old ChatGPT Site is a temporary migration source to retire after accepted
+replacement/data/client verification and explicit approval, not a permanent
+second writable Companion. Prepared navigation routes to Railway. Existing
+source identities, OAuth callbacks and installed endpoints are preserved while
+migration dependencies remain unresolved. Where dated hosting/DNS/source claims below differ, this direction supersedes
+them. Existing build and contribution instructions remain applicable. No DNS or
+hosting change is authorized here. Follow the existing
+[canonical cutover inventory](apps/companion/deployment/RAILWAY.md).
+
 # PIXIE Ecosystem Guide
 
 This is a plain-language, out-of-world guide to PIXIE’s place across Loptr Lab. It explains how a deliberately transmedia story can be discovered across separate media, while the studio’s repositories also contain genuinely separate stories, planning documents, prototypes, and code references at different stages. The guide maps those pieces; it does not connect them into one service or declare every link part of one fictional continuity.
