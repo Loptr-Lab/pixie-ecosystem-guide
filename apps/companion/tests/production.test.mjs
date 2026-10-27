@@ -17,7 +17,7 @@ test('production readiness rejects corrupt encrypted owner state and preserves i
  try{server=await startProduction(env,{oauthFactory:provider.factory});const base='http://127.0.0.1:'+server.address().port;assert.equal((await fixtureFetch(base+'/api/auth/session',{headers:{Host:host}})).status,200);await writeFile(path.join(mount,'private','identity.enc'),'preserved corrupt identity');assert.equal((await fetch(base+'/ready')).status,503);await close(server);server=null;await assert.rejects(startProduction(env,{oauthFactory:provider.factory}));}
  finally{if(server)await close(server);await rm(mount,{recursive:true,force:true});}
 });
-test('production MCP recovers private data after restart while browser bearer access is rejected',async()=>{
+test('production refuses unscoped machine workspace access across restart while preserving volume',async()=>{
  const mount=await mkdtemp(path.join(os.tmpdir(),'pixie-volume-'));const env=config(mount);let server;
  try{
   server=await startProduction(env);let base='http://127.0.0.1:'+server.address().port;
@@ -27,13 +27,13 @@ test('production MCP recovers private data after restart while browser bearer ac
   assert.equal((await fetch(base+'/mcp',{method:'POST',body:'{}'})).status,401);
   assert.equal((await (await fetch(base+'/api/workspace/capabilities')).json()).localOwner,false);
   assert.equal((await call('workspace_list')).status,401);
-  const created=await fetch(base+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_create',arguments:{name:'Synthetic restart project',purpose:'Verify private mounted storage'}}})});assert.equal(created.status,200);const {project}=(await created.json()).result.structuredContent;
+  const created=await fetch(base+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_create',arguments:{name:'Synthetic restart project',purpose:'Verify private mounted storage'}}})});assert.equal(created.status,200);assert.equal((await created.json()).result?.structuredContent?.project,undefined);
   assert.equal((await fetch(base+'/private/workspace.json')).status,404);
   assert.equal((await fetch(base+'/.pixie-data/workspace.json')).status,404);
   await close(server);server=await startProduction(env);base='http://127.0.0.1:'+server.address().port;
   const rpc=await fetch(base+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_get',arguments:{project_id:project.id}}})});
-  assert.equal(rpc.status,200);const body=await rpc.json();assert.ok(JSON.stringify(body).includes(project.id));assert.ok(JSON.stringify(body).includes('Synthetic restart project'));assert.ok(!JSON.stringify(body).includes(token));
-  assert.equal((await call('workspace_get',{project_id:project.id})).status,401);
+  assert.equal(rpc.status,200);const body=await rpc.json();assert.equal(body.result?.structuredContent?.project,undefined);assert.ok(!JSON.stringify(body).includes(token));
+  assert.equal((await call('workspace_list')).status,401);
   await writeFile(env.PIXIE_DATA_FILE,'synthetic corrupt state');assert.equal((await fetch(base+'/ready')).status,503);
   await close(server);server=null;await assert.rejects(startProduction(env),/preserved/);
  }finally{if(server)await close(server);await rm(mount,{recursive:true,force:true});}
