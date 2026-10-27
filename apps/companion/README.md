@@ -100,9 +100,26 @@ This minimal bearer adapter is a tested transport boundary, not a completed
 multi-user OAuth installation flow. Real ChatGPT/other-client connection and
 per-client authorization/revocation require review before public service release.
 Do not expose an unconfigured endpoint or treat web identity sign-in as MCP auth.
-The existing AT Protocol client metadata remains bound to the published Site;
-another origin offers the existing sign-in link rather than claiming migrated
-OAuth. Do not retire the Site while that dependency remains.
+Atmosphere identity uses the existing browser OAuth SDK and exact reviewed HTTPS
+origins in `lib/identity-origin.mjs`. The original Site keeps its unchanged
+`/oauth-client-metadata.json` and root redirect. The Railway origin
+`https://pixie-project-companion-production.up.railway.app` uses the public
+`/oauth-client-metadata-railway.json` and its own root redirect. Other origins
+cannot start OAuth here and retain the link to the original Site. No Host header,
+query parameter or imported record selects a redirect. These are independent
+origin-bound sessions, not synchronized accounts or private-workspace access.
+No identity session replaces the private bearer key or includes it in browser
+assets. No provider, domain, credential or deployment configuration change is
+needed; after separately approved deployment, verify the Railway metadata URL
+returns its exact `client_id` and matching `redirect_uris` before signing in.
+
+`node tests/browser-identity.cjs` (with the same Playwright variables described
+below) exercises both origins' sign-in initiation, callback initialization,
+restoration, revocation/sign-out, account switching and invalid-origin rejection
+using a mocked SDK and synthetic identities. It does not test real provider
+authorization, PKCE/state/DPoP cryptography, token exchange or Safari's storage.
+Live Railway and original-Site provider round trips and physical iPad/Safari
+acceptance remain required. Do not retire or redeploy the original Site here.
 
 ## Supported operations: read versus draft versus execution
 

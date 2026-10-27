@@ -1,11 +1,13 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
+import {identityConfiguration,siteIdentityOrigin} from '../lib/identity-origin.mjs';
 
 type IdentityUI = {destroy:()=>void};
 declare global {
  interface Window { PixieIdentity?: {mount:(element:HTMLElement)=>IdentityUI}; }
 }
 const loads = new Map<string,Promise<void>>();
+const publishedIdentity=identityConfiguration(siteIdentityOrigin)!;
 function loadScript(src:string) {
  if (!loads.has(src)) loads.set(src,new Promise<void>((resolve,reject)=>{
   const script=document.createElement('script');script.src=src;script.async=true;
@@ -22,6 +24,9 @@ export default function Account(){
   window.addEventListener('hashchange',open);
   loadScript('./shared/atproto-account.js?v=1').then(()=>loadScript('./shared/atproto-sign-in.js?v=1')).then(()=>{
    if(!disposed&&panel.current){
+    const config=identityConfiguration(window.location.origin)||publishedIdentity;
+    panel.current.dataset.clientId=config.clientId;
+    panel.current.dataset.redirectUri=config.redirectUri;
     ui=window.PixieIdentity?.mount(panel.current);
     const form=panel.current.querySelector('form');
     if(form){observer=new MutationObserver(()=>setConnected(form.hidden));observer.observe(form,{attributes:true,attributeFilter:['hidden']});setConnected(form.hidden);}
@@ -36,7 +41,7 @@ export default function Account(){
   <summary>{connected?'Account':'Sign in'}</summary>
   <div className="account-panel"><h2>Your atmosphere account</h2>
   {error&&<p role="status">{error}</p>}
-  <div id="companion-identity" ref={panel} data-client-id="https://pixie-project-companion.ibloud-ivxx.chatgpt.site/oauth-client-metadata.json" data-redirect-uri="https://pixie-project-companion.ibloud-ivxx.chatgpt.site/" data-app-name="PIXIE Project Companion"/>
+  <div id="companion-identity" ref={panel} data-client-id={publishedIdentity.clientId} data-redirect-uri={publishedIdentity.redirectUri} data-app-name="PIXIE Project Companion"/>
   <noscript><p>Sign-in needs JavaScript. Public resources and GitHub contribution paths remain available.</p></noscript>
   </div>
  </details>;
