@@ -70,3 +70,21 @@ test('changing administrator DID never revokes an authenticated member session',
 test('the pinned official SDK initializes with the preserved Railway metadata',async()=>{
  const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-sdk-'));try{await createOwnerIdentity({ownerDid:owner,secret:'d'.repeat(64),file:path.join(dir,'identity.enc')}).ready();}finally{await rm(dir,{recursive:true,force:true});}
 });
+
+test('two verified DIDs have isolated list, read, export, and erase operations',async()=>{
+ const f=await fixture();try{
+  const a=await login(f.base,cookieJar(),'owner'),b=await login(f.base,cookieJar(),'stranger');
+  const create=async(user,name)=>{const response=await f.post('/api/workspace',user.jar,user.csrf,{name:'workspace_create',args:{name}});assert.equal(response.status,200);return(await response.json()).project.id;};
+  const aid=await create(a,'A private workspace'),bid=await create(b,'B private workspace');
+  const run=async(user,name,args={})=>{const response=await f.post('/api/workspace',user.jar,user.csrf,{name,args});assert.equal(response.status,200);return response.json();};
+  assert.deepEqual((await run(a,'workspace_list')).projects.map(p=>p.id),[aid]);
+  assert.deepEqual((await run(b,'workspace_list')).projects.map(p=>p.id),[bid]);
+  const cross=await f.post('/api/workspace',b.jar,b.csrf,{name:'workspace_get',args:{project_id:aid}});
+  assert.notEqual((await cross.json()).project?.id,aid);
+  assert.doesNotMatch(JSON.stringify(await run(b,'workspace_export',{})),/A private workspace/);
+  await f.restart();assert.deepEqual((await run(a,'workspace_list')).projects.map(p=>p.id),[aid]);
+  assert.deepEqual((await run(b,'workspace_list')).projects.map(p=>p.id),[bid]);
+  const logout=await f.post('/api/auth/logout',a.jar,a.csrf);assert.equal(logout.status,200);
+  assert.deepEqual((await run(b,'workspace_list')).projects.map(p=>p.id),[bid]);
+ }finally{await f.close();}
+});
