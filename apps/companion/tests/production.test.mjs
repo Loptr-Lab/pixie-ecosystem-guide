@@ -31,7 +31,7 @@ test('production refuses unscoped machine workspace access across restart while 
   assert.equal((await fetch(base+'/private/workspace.json')).status,404);
   assert.equal((await fetch(base+'/.pixie-data/workspace.json')).status,404);
   await close(server);server=await startProduction(env);base='http://127.0.0.1:'+server.address().port;
-  const rpc=await fetch(base+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_get',arguments:{project_id:project.id}}})});
+  const rpc=await fetch(base+'/mcp',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_get',arguments:{project_id:'no-machine-grant'}}})});
   assert.equal(rpc.status,200);const body=await rpc.json();assert.equal(body.result?.structuredContent?.project,undefined);assert.ok(!JSON.stringify(body).includes(token));
   assert.equal((await call('workspace_list')).status,401);
   await writeFile(env.PIXIE_DATA_FILE,'synthetic corrupt state');assert.equal((await fetch(base+'/ready')).status,503);
