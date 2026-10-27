@@ -23,11 +23,11 @@ async function body(request){
  for await(const chunk of request){length+=chunk.length;if(length>maximumBody)throw Object.assign(Error('Request too large'),{status:413});chunks.push(chunk);}
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
-export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
- const store=workspaceStore||createFileWorkspaceStore(process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)));
+export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,workspaceFile=process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)),modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
+ const store=workspaceStore||createFileWorkspaceStore(workspaceFile);
  const model=modelProvider===undefined?createModelProvider({url:process.env.PIXIE_MODEL_URL,key:process.env.PIXIE_MODEL_API_KEY,model:process.env.PIXIE_MODEL_NAME,fetcher}):modelProvider;
  const services={workspace:createWorkspaceService(store,{model,fetcher})};
- const userStores=createDidWorkspaceResolver(process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)));
+ const userStores=createDidWorkspaceResolver(workspaceFile);
  const userServices=new Map();
  function forDid(did){if(!userServices.has(did))userServices.set(did,{workspace:createWorkspaceService(userStores(did),{model,fetcher})});return userServices.get(did);}
  const server=http.createServer(async(request,response)=>{
