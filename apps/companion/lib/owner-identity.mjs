@@ -1,9 +1,9 @@
-import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
+import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 import path from 'node:path';
 import {readFile} from 'node:fs/promises';
 import {identityStore} from './identity-store.mjs';
 import {railwayIdentityOrigin} from './identity-origin.mjs';
-import {serverFetch} from './server-fetch.mjs';
+import {oauthFetch} from './server-fetch.mjs';
 const lifetime=8*60*60_000,loginLifetime=10*60_000;
 const cookieName='__Host-pixie-owner',loginCookie='__Host-pixie-login';
 const nonce=()=>randomBytes(32).toString('base64url');
@@ -26,7 +26,7 @@ export function createOwnerIdentity({ownerDid,secret,file,now=Date.now,oauthFact
   const options={clientMetadata:metadata,stateStore:store.stateStore,sessionStore:store.sessionStore,responseMode:'query'};
   if(oauthFactory)return oauthFactory(options);
   const {NodeOAuthClient,requestLocalLock}=await import('@atproto/oauth-client-node');
-  return new NodeOAuthClient({...options,requestLock:requestLocalLock,fetch:(url,init={})=>serverFetch(url,{...init,signal:init.signal?AbortSignal.any([init.signal,AbortSignal.timeout(10_000)]):AbortSignal.timeout(10_000)})});
+  return new NodeOAuthClient({...options,requestLock:requestLocalLock,fetch:oauthFetch});
  })());}
  function sameOrigin(request){if(request.headers.origin!==railwayIdentityOrigin||request.headers.host!==new URL(railwayIdentityOrigin).host||request.headers['sec-fetch-site']==='cross-site')throw fail(403,'Invalid identity origin.');}
  function trustedHost(request){if(request.headers.host!==new URL(railwayIdentityOrigin).host)throw fail(403,'Invalid identity host.');}
@@ -34,16 +34,18 @@ export function createOwnerIdentity({ownerDid,secret,file,now=Date.now,oauthFact
   const id=cookie(request,cookieName);if(!id)return null;
   const key=hash(id),record=await store.transaction(s=>s.browsers[key]);
   if(!record||!record.did)return null;
-  try{const session=await(await client()).restore(record.did);const info=await session.getTokenInfo();if(session.did!==record.did||info.sub!==record.did||info.expired)throw Error('Session expired.');const active=await store.transaction(s=>s.browsers[key]);return active?{...active,key}:null;}
+  try{const session=await(await client()).restore(record.did);const info=await session.getTokenInfo();if(session.did!==record.did||info.sub!==record.did||info.expired)throw Error('Session expired.');const active=await store.transaction(s=>s.browsers[key]);return active?{...active,key,role:active.did===ownerDid?'admin':'member'}:null;}
   catch{await store.transaction(s=>{delete s.browsers[key];});return null;}
  }
  function csrf(request,session){sameOrigin(request);if(!session||!equal(request.headers['x-pixie-csrf'],session.csrf))throw fail(403,'Session or CSRF check failed.');}
  async function status(request,response){
   trustedHost(request);const session=await current(request);if(session)return {service:'pixie-server-identity',configured:true,session:{did:session.did},csrf:session.csrf};
-  let raw=cookie(request,loginCookie),key=raw?hash(raw):'',record=key?await store.transaction(s=>s.logins[key]):null;
-  if(!record){raw=nonce();key=hash(raw);record={csrf:nonce(),attempts:0,expires:now()+loginLifetime};await store.transaction(s=>{if(Object.keys(s.logins).length>=128)throw fail(429,'Too many pending sign-ins. Try later.');s.logins[key]=record;});response.setHeader('Set-Cookie',setCookie(loginCookie,raw,600));}
-  return {service:'pixie-server-identity',configured:true,session:null,csrf:record.csrf};
+  let raw=cookie(request,loginCookie);
+  if(!raw){raw=nonce();response.setHeader('Set-Cookie',setCookie(loginCookie,raw,600));}
+  // Anonymous page loads cannot reserve the finite OAuth transaction store.
+  return {service:'pixie-server-identity',configured:true,session:null,csrf:loginCsrf(raw,Math.floor(now()/(loginLifetime/2)))};
  }
+ function loginCsrf(raw,bucket){return createHmac('sha256',Buffer.from(secret,'hex')).update('pixie-login/v1:'+raw+':'+bucket).digest('base64url');}
  async function readRequestIdentity(request){
   const chunks=[];let size=0;for await(const part of request){size+=part.length;if(size>4096)throw fail(413,'Invalid sign-in request.');chunks.push(part);}
   let payload;try{payload=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{throw fail(400,'Invalid sign-in request.');}
@@ -51,8 +53,10 @@ export function createOwnerIdentity({ownerDid,secret,file,now=Date.now,oauthFact
  }
  async function login(request){
   sameOrigin(request);const raw=cookie(request,loginCookie),key=raw?hash(raw):'';
-  const record=await store.transaction(s=>{const r=s.logins[key];if(!r||!equal(request.headers['x-pixie-csrf'],r.csrf))throw fail(403,'Sign-in CSRF check failed.');if(r.attempts>=5)throw fail(429,'Too many sign-in attempts. Try later.');r.attempts++;return r;});
+  const csrf=request.headers['x-pixie-csrf'],bucket=Math.floor(now()/(loginLifetime/2));
+  if(!raw||![bucket,bucket-1].some(b=>equal(csrf,loginCsrf(raw,b))))throw fail(403,'Sign-in CSRF check failed.');
   const payload=await readRequestIdentity(request);
+  await store.transaction(s=>{let r=s.logins[key];if(!r){if(Object.keys(s.logins).length>=128)throw fail(429,'Too many active sign-in attempts. Try later.');r=s.logins[key]={attempts:0,expires:now()+loginLifetime};}if(r.attempts>=5)throw fail(429,'Too many sign-in attempts. Try later.');r.attempts++;});
   const url=await(await client()).authorize(payload.handle,{state:key,scope:'atproto',prompt:'consent',signal:AbortSignal.timeout(15_000)});
   if(url.protocol!=='https:')throw fail(403,'The identity provider must use HTTPS.');
   return {url:url.href};

@@ -88,3 +88,38 @@ test('machine bearer alone cannot read or write anyone’s workspace',async()=>{
   assert.doesNotMatch(await(await fetch(origin+'/health')).text(),new RegExp(token));
  }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('independent file adapters serialize overlapping writes to the same workspace',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-overlap-'));try{
+  const filename=path.join(dir,'workspace.json');let enter;const entered=new Promise(resolve=>enter=resolve);
+  const first=createFileWorkspaceStore(filename),second=createFileWorkspaceStore(filename);
+  const delayed={transaction:fn=>first.transaction(async state=>{enter();await new Promise(r=>setTimeout(r,50));return fn(state);})};
+  const pending=createWorkspaceService(delayed).run('workspace_create',{name:'First acknowledged project'});await entered;
+  await Promise.all([pending,createWorkspaceService(second).run('workspace_create',{name:'Second acknowledged project'})]);
+  const final=await createWorkspaceService(first).run('workspace_list',{});assert.equal(final.projects.length,2);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+test('DID workspace storage refuses symlink namespaces and preserves an interrupted writer lock',async()=>{
+ const {mkdir,symlink,access}=await import('node:fs/promises');const {createDidWorkspaceResolver}=await import('../lib/workspace-store.mjs');
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-containment-'));try{
+  await mkdir(path.join(dir,'private'));await mkdir(path.join(dir,'outside'));await symlink(path.join(dir,'outside'),path.join(dir,'private/users'));
+  const resolve=createDidWorkspaceResolver(path.join(dir,'private/workspace.json'));
+  await assert.rejects(createWorkspaceService(resolve('did:plc:aaaaaaaaaaaaaaaaaaaaaaaa')).run('workspace_create',{name:'Not outside the root'}),/symbolic-link/);
+  const filename=path.join(dir,'private/locked.json');await writeFile(filename+'.lock','synthetic interrupted writer');
+  await assert.rejects(createWorkspaceService(createFileWorkspaceStore(filename)).run('workspace_create',{name:'Not falsely saved'}),/storage is busy/);await access(filename+'.lock');
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('the file guard excludes writers in a separate Node process',async()=>{
+ const {spawn}=await import('node:child_process');const {withPrivateFileLock}=await import('../lib/workspace-store.mjs');
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-process-lock-'));let child;
+ try{
+  const file=path.join(dir,'workspace.json');let held;const entered=new Promise(r=>held=r);let release;const finish=new Promise(r=>release=r);
+  const pending=withPrivateFileLock(file,async()=>{held();await finish;});await entered;
+  const source=`import {withPrivateFileLock} from ${JSON.stringify(new URL('../lib/workspace-store.mjs',import.meta.url).href)};process.send('attempt');await withPrivateFileLock(process.argv[1],async()=>process.send('entered'));`;
+  child=spawn(process.execPath,['--input-type=module','-e',source,file],{stdio:['ignore','ignore','pipe','ipc']});
+  let enteredTooEarly=false,released=false;
+  const done=new Promise((resolve,reject)=>{child.on('message',message=>{if(message==='entered'&&!released)enteredTooEarly=true;if(message==='attempt')setTimeout(()=>{released=true;release();},50);});child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(Error('Child file guard failed: '+code)));});
+  await done;await pending;assert.equal(enteredTooEarly,false);
+ }finally{child?.kill();await rm(dir,{recursive:true,force:true});}
+});

@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createCompanionServer} from '../server.mjs';
 import {createOwnerIdentity,ownerIdentityConfiguration} from '../lib/owner-identity.mjs';
 import {createFileWorkspaceStore} from '../lib/workspace-store.mjs';
-import {owner,origin,host,syntheticProvider,cookieJar,login,fixtureFetch as fetch} from './fixtures/owner-identity.mjs';
+import {owner,stranger,origin,host,syntheticProvider,cookieJar,login,fixtureFetch as fetch} from './fixtures/owner-identity.mjs';
 const token='synthetic-machine-only-token-'.repeat(2);
 async function fixture(){
  const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-owner-'));let time=Date.now(),server,base;
@@ -99,5 +99,43 @@ test('two verified DIDs have isolated list, read, export, and erase operations',
   assert.deepEqual((await run(b,'workspace_list')).projects.map(p=>p.id),[bid]);
   const logout=await f.post('/api/auth/logout',a.jar,a.csrf);assert.equal(logout.status,200);
   assert.deepEqual((await run(b,'workspace_list')).projects.map(p=>p.id),[bid]);
+ }finally{await f.close();}
+});
+
+test('anonymous session bootstrap cannot reserve all login slots',async()=>{
+ const f=await fixture();try{
+  for(let n=0;n<140;n++)assert.equal((await fetch(f.base+'/api/auth/session',{headers:{Host:host}})).status,200);
+  const user=await login(f.base);assert.equal((await f.post('/api/workspace',user.jar,user.csrf,{name:'workspace_list',args:{}})).status,200);
+ }finally{await f.close();}
+});
+test('independent authentication-store instances preserve concurrent sessions',async()=>{
+ const {identityStore}=await import('../lib/identity-store.mjs');const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-identity-overlap-'));try{
+  const file=path.join(dir,'identity.enc'),a=identityStore(file,'a'.repeat(64)),b=identityStore(file,'a'.repeat(64));let enter;const entered=new Promise(r=>enter=r);
+  const pending=a.transaction(async state=>{enter();await new Promise(r=>setTimeout(r,50));state.browsers.first={did:owner,expires:Date.now()+60000};});await entered;
+  await Promise.all([pending,b.transaction(state=>{state.browsers.second={did:stranger,expires:Date.now()+60000};})]);
+  assert.equal(await a.transaction(state=>Object.keys(state.browsers).length),2);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('foreign nested records, ownership claims and imports cannot escape the session workspace',async()=>{
+ const f=await fixture();try{
+  const a=await login(f.base),b=await login(f.base,cookieJar(),'stranger');
+  const run=async(user,name,args={})=>{const r=await f.post('/api/workspace',user.jar,user.csrf,{name,args});assert.equal(r.status,200);return r.json();};
+  const ap=(await run(a,'workspace_create',{name:'A private sentinel'})).project;
+  const bp=(await run(b,'workspace_create',{name:'B private sentinel'})).project;
+  const task=(await run(a,'workspace_add_task',{project_id:ap.id,title:'A task'})).project.tasks[0];
+  const source=(await run(a,'workspace_add_source',{project_id:ap.id,title:'A source',url:'https://example.test'})).project.sources[0];
+  for(const [name,args] of [['workspace_add_task',{title:'foreign'}],['workspace_add_source',{title:'foreign',url:'https://example.test'}],['workspace_add_note',{text:'foreign'}],['workspace_update_task',{task_id:task.id,title:'foreign'}],['workspace_check_source',{source_id:source.id}],['workspace_prepare_handoff',{}],['workspace_save_handoff',{text:'foreign'}]]){
+   const r=await f.post('/api/workspace',b.jar,b.csrf,{name,args:{project_id:ap.id,...args}});assert.equal(r.status,404,name);assert.doesNotMatch(await r.text(),/A private sentinel|A task|A source/);
+  }
+  assert.notEqual((await f.post('/api/workspace',b.jar,b.csrf,{name:'workspace_update_task',args:{project_id:bp.id,task_id:task.id,title:'foreign'}})).status,200);
+  assert.equal((await f.post('/api/workspace',b.jar,b.csrf,{name:'workspace_list',args:{did:owner}})).status,400);
+  const backup=(await run(b,'workspace_export')).backup;backup.projects[0].id=ap.id;backup.selectedId=ap.id;
+  await run(b,'workspace_import',{backup_json:JSON.stringify(backup),strategy:'reject-conflicts'});
+  assert.equal((await run(a,'workspace_get',{project_id:ap.id})).project.name,'A private sentinel');
+  const forged=structuredClone(backup);forged.projects[0].ownerDid=owner;
+  assert.notEqual((await f.post('/api/workspace',b.jar,b.csrf,{name:'workspace_import',args:{backup_json:JSON.stringify(forged)}})).status,200);
+  await run(b,'workspace_clear',{confirmation:'DELETE ALL SAVED PROJECTS'});
+  assert.equal((await run(a,'workspace_get',{project_id:ap.id})).project.name,'A private sentinel');
  }finally{await f.close();}
 });

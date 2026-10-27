@@ -25,7 +25,7 @@ authentication mechanism implicitly.
 
 ## Build and run outside Sites
 
-Requires Node >=22.13 and the pinned pnpm version in package.json.
+Requires Node >=22.19.0 and the pinned pnpm version in package.json.
 
 ```sh
 cd apps/companion
@@ -56,14 +56,15 @@ whole file before saving and never overwrites existing project IDs. Conflicts ca
 be imported explicitly as distinct copies. Export before changing hosting origins.
 Unsaved edits are excluded from exports and warned about when switching projects.
 
-The independent runner stores this private workspace in `.pixie-data/workspace.json`
-(or `PIXIE_DATA_FILE`) with atomic writes and owner-only permissions. UI and
-`workspace_*` MCP tools use the same service and store. Back up the data file along
-with exports; Git does not back it up. Loopback development permits the local
-owner. Production browser access requires a server-verified Atmosphere session
-for the explicitly configured owner DID. The machine bearer key works only on
-MCP, never on browser workspace requests. Production requires HTTPS and
-`NODE_ENV=production`. This is a single-owner store, not multi-user isolation.
+The independent runner saves each verified DID's workspace in a server-derived
+hashed file under `users/` beside `PIXIE_DATA_FILE`. The original workspace file is
+legacy unowned data and remains unchanged. Atomic writes, private permissions and
+exclusive per-file locks protect both project and encrypted identity storage.
+Production browser access uses the existing server-verified Atmosphere session;
+no browser key is required. Admin metadata does not grant other users' records.
+The machine bearer works only on MCP and grants no unscoped workspace access.
+Loopback development retains the existing explicit local-owner mode. Back up the
+private volume and user exports; Git is not a data backup.
 
 A static-only web preview instead uses that browser/origin's IndexedDB, explicitly
 labelled in the interface. It survives reloads and normal browser restarts but not
@@ -238,7 +239,7 @@ plugin update and Site retirement are distinct actions.
 
 `pnpm test` includes persistent workspace round-trips, isolated project operations,
 validated non-overwriting imports, corrupt-file preservation, unavailable-model
-behavior, provider-context isolation, and private API/MCP state parity. Run
+behavior, provider-context isolation, cross-user API denial, and unscoped MCP denial. Run
 `node tests/browser-workspace.cjs` after building, with the same Playwright/Chromium
 variables described above. It starts its own loopback servers and temporary file
 store; it never erases an existing workspace. It checks both server and static
@@ -262,9 +263,35 @@ MCP has source tests, but hosted deployment and plugin connection remain unfinis
 
 Service-specific Railpack/start/readiness configuration is in `railway.json`.
 The existing guide root build is untouched. Use the fail-closed production launcher
-`node scripts/start-production.mjs`, with a privately configured owner token,
+`node scripts/start-production.mjs`, with privately configured machine and identity secrets,
 local-owner bypass disabled and a real persistent volume. See
 [deployment/RAILWAY.md](deployment/RAILWAY.md) for exact existing-service settings,
 non-secret variables, verification evidence, rollback and current access blockers.
-This prepares configuration; it does not establish a deployed Railway runtime.
+Production remains pinned to `9e83676856e38f1f34a17ce5bf44fe631b8d2f15`; this review does not release the candidate.
 The static Vercel preview continues to use browser storage and hosts no MCP.
+
+## Corrective security review
+
+OAuth uses the official SDK's existing locked Node safety adapter with native
+fetch. HTTPS, DNS/private-address and redirect-hop checks stay attached to its
+transport. It does not use the unrelated Wrangler proxy dispatcher. Anonymous
+session-status reads no longer consume pending-login slots; actual login attempts
+retain bounded, cookie-bound CSRF-protected transactions. Session capability
+responses identify the verified DID so resumed tabs clear a previous account's
+private view before reopening the current workspace.
+
+Private file operations use an exclusive per-file lock shared across Node
+processes. Lock contention fails without acknowledging a save. Keep one Railway
+replica; this is not distributed storage. A crash may leave a `.lock` file: stop
+all writers, back up and validate the data, confirm no writer remains, and remove
+only the verified stale lock under separate operational approval. Never break a
+lock automatically or discard saved data to recover.
+
+The behavioral suite includes the real SDK transport boundary, synthetic A/B
+account isolation, nested-record/import rejection, expired sessions, CSRF,
+corrupt-file preservation, independent writers and anonymous login-capacity
+protection. `node tests/browser-owner.cjs` additionally checks account switching,
+legacy-data preservation, dark/light text contrast and restart recovery. Browser
+provider cryptography is synthetic; live OAuth and physical iPad acceptance remain
+required. Browser checks currently require separately available tooling and are
+not claimed as enforced GitHub checks.

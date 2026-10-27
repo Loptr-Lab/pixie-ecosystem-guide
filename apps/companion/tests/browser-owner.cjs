@@ -5,13 +5,15 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
  const {createCompanionServer}=await import('../server.mjs');
  const {createOwnerIdentity}=await import('../lib/owner-identity.mjs');
  const {createFileWorkspaceStore}=await import('../lib/workspace-store.mjs');
+ const {createWorkspaceService}=await import('../lib/workspace.mjs');
+ const {createHash}=require('node:crypto');
  const {syntheticProvider,fixtureFetch,owner,origin,host}=await import('./fixtures/owner-identity.mjs');
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'pixie-browser-owner-')),provider=syntheticProvider();let server,base;
  const start=async()=>{const identity=createOwnerIdentity({ownerDid:owner,secret:'c'.repeat(64),file:path.join(dir,'identity.enc'),oauthFactory:provider.factory});await identity.ready();server=createCompanionServer({identity,identityConfig:null,modelProvider:null,token:'synthetic-machine-only-'.repeat(3),workspaceStore:createFileWorkspaceStore(path.join(dir,'workspace.json')),workspaceFile:path.join(dir,'workspace.json')});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));base='http://127.0.0.1:'+server.address().port;};
  const browser=await chromium.launch({headless:true,executablePath:process.env.PIXIE_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox']});
  const mount=async storageState=>{const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,storageState});await context.route('**/*',async route=>{
   const request=route.request(),url=new URL(request.url());
-  if(url.origin==='https://identity.example.test')return route.fulfill({status:303,headers:{Location:origin+'/?state='+url.searchParams.get('state')+'&code=owner&iss='+encodeURIComponent('https://identity.example.test')}});
+  if(url.origin==='https://identity.example.test')return route.fulfill({status:303,headers:{Location:origin+'/?state='+url.searchParams.get('state')+'&code='+(url.searchParams.get('login_hint')==='stranger.test'?'stranger':'owner')+'&iss='+encodeURIComponent('https://identity.example.test')}});
   if(url.origin!==origin)return route.fulfill({contentType:'application/json',body:'{}',headers:{'access-control-allow-origin':'*'}});
   const headers={...request.headers(),Host:host};delete headers['host'];
   const response=await fixtureFetch(base+url.pathname+url.search,{method:request.method(),headers,body:request.postData()||undefined});
@@ -20,6 +22,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
  });return context;};
  let context;
  try{
+  await createWorkspaceService(createFileWorkspaceStore(path.join(dir,'workspace.json'))).run('workspace_create',{name:'Unowned legacy project'});const legacyBefore=await fs.readFile(path.join(dir,'workspace.json'),'utf8');
   await start();context=await mount();let page=await context.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto(origin+'/#creator');await page.getByRole('heading',{name:'Greetings. Let’s keep the thread.'}).waitFor();
   assert.equal(await page.getByLabel('Server connection key').count(),0);
@@ -33,11 +36,28 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
   assert.equal(await page.getByLabel('Text size',{exact:true}).inputValue(),'24');
   for(const width of [820,390,320]){await page.setViewportSize({width,height:1180});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);}
   assert.equal(await page.getByRole('group',{name:'Reading preferences'}).getByText('Device and local time',{exact:true}).count(),1);
-  const second=await context.newPage();await second.goto(origin+'/#creator');await second.getByRole('heading',{name:'Synthetic one-sign-in project',exact:true}).waitFor();
+  const measurements=[];
+  for(const theme of ['dark','light']){
+   await page.getByLabel('Theme',{exact:true}).selectOption(theme);
+   const scan=await page.evaluate(()=>{
+    function rgb(c){const n=c.match(/[\d.]+/g)?.map(Number);return n?.length>=3?n.slice(0,3):null;}
+    function lum(c){return c.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);}
+    let minimum=Infinity,count=0;const failures=[],walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    while(walker.nextNode()){const t=walker.currentNode,e=t.parentElement;if(!t.textContent.trim()||!e?.getClientRects().length||['OPTION','SCRIPT','STYLE'].includes(e.tagName)||e.closest(':disabled'))continue;const cs=getComputedStyle(e);let p=e,bg;while(p){bg=getComputedStyle(p).backgroundColor;if(bg!=='transparent'&&bg!=='rgba(0, 0, 0, 0)')break;p=p.parentElement;}const fg=rgb(cs.color),back=rgb(bg||'');if(!fg||!back)continue;const a=lum(fg),b=lum(back),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05),large=parseFloat(cs.fontSize)>=24||(parseFloat(cs.fontSize)>=18.66&&parseInt(cs.fontWeight)>=700);count++;minimum=Math.min(minimum,ratio);if(ratio<(large?3:4.5))failures.push({text:t.textContent.trim().slice(0,70),ratio,font:cs.fontSize});}
+    return {minimum,count,failures};
+   });assert.deepEqual(scan.failures,[],theme+' text contrast');measurements.push({theme,...scan});
+  }
+  await page.getByLabel('Theme',{exact:true}).selectOption('dark');
+  await provider.options.at(-1).sessionStore.del(owner);
+  const switched=await context.newPage();await switched.goto(origin+'/#account');await switched.getByLabel('Find your atmosphere account').fill('stranger.test');await switched.getByRole('button',{name:'Continue with Atmosphere',exact:true}).click();await switched.waitForFunction(()=>document.querySelector('#account code')?.textContent==='did:plc:bbbbbbbbbbbbbbbbbbbbbbbb');
+  const refreshed=page.waitForResponse(r=>r.url().endsWith('/api/workspace/capabilities'));await page.bringToFront();await page.evaluate(()=>dispatchEvent(new Event('focus')));await refreshed;await page.getByRole('heading',{name:'Synthetic one-sign-in project',exact:true}).waitFor({state:'hidden'});
+  await page.getByRole('button',{name:'My projects',exact:true}).click();const newWorkspace=page.locator('.creator-workspace');await newWorkspace.getByLabel('Project name',{exact:true}).fill('Independent second account');await newWorkspace.getByRole('button',{name:'Create and save project'}).click();await newWorkspace.getByRole('heading',{name:'Independent second account',exact:true}).waitFor();
+  const second=await context.newPage();await second.goto(origin+'/#creator');await second.getByRole('heading',{name:'Independent second account',exact:true}).waitFor();
   await page.goto(origin+'/#account');await page.getByRole('button',{name:'Sign out',exact:true}).click();
   await page.getByRole('button',{name:'Continue with Atmosphere',exact:true}).waitFor();
-  await second.getByRole('heading',{name:'Synthetic one-sign-in project',exact:true}).waitFor({state:'hidden'});
-  assert.match(await fs.readFile(path.join(dir,'workspace.json'),'utf8'),/Synthetic one-sign-in project/);
-  assert.deepEqual(errors,[]);console.log('PASS: one Atmosphere sign-in, Secure/HttpOnly cookie, private project access, refresh, browser reopen + server restart, preferences, 320–820px reflow, cross-tab sign-out; provider/SDK cryptography mocked.');
+  await second.getByRole('heading',{name:'Independent second account',exact:true}).waitFor({state:'hidden'});
+  assert.equal(await fs.readFile(path.join(dir,'workspace.json'),'utf8'),legacyBefore);
+  assert.match(await fs.readFile(path.join(dir,'users',createHash('sha256').update(owner).digest('hex')+'.json'),'utf8'),/Synthetic one-sign-in project/);
+  assert.deepEqual(errors,[]);console.log('PASS: one Atmosphere sign-in, Secure/HttpOnly cookie, private project access, refresh, browser reopen + server restart, preferences, 320–820px reflow, account switching, cross-tab sign-out, dark/light text contrast and legacy-data preservation; provider/SDK cryptography mocked.');
  }finally{await context?.close();await browser.close();if(server)await new Promise(resolve=>server.close(resolve));await fs.rm(dir,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

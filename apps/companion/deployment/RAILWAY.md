@@ -41,7 +41,7 @@ browser bundle at private Railway storage or place an owner token in build varia
    existing proxy-aware fetch adapter uses the locked Wrangler/Undici installation.
    Do not prune dev dependencies without first replacing that adapter. Do not relax
    policy or regenerate dependencies to make a build pass. Set
-   `RAILPACK_NODE_VERSION=22`. Verify the build logs before proceeding.
+   `RAILPACK_NODE_VERSION=22` and require Node >=22.19.0 in build/runtime logs. Verify the build logs before proceeding.
 3. Use the service's existing persistent volume, mounted at `/data`, or attach one
    to this existing service if none exists. Never detach/format/replace a volume
    containing work. Railway must supply `RAILWAY_VOLUME_MOUNT_PATH`. Set
@@ -72,10 +72,19 @@ browser bundle at private Railway storage or place an owner token in build varia
    live under a server-derived hashed path on the same private volume. Readiness/health return
    only service availability, never project records.
 
-The JSON file store serializes writes within one process. Keep exactly one
-replica and one writer. Do not run another server/CLI against the same file or
-assume multi-region writes are supported. Confirm Railway does not overlap active
-writers during rolling deployments before accepting this storage model.
+Private JSON and encrypted identity writes use atomic replacement and an exclusive
+per-file lock across Node processes. Keep exactly one replica in the existing
+volume's region. Contention returns a failure without claiming a save; crashes
+can leave a lock requiring operator review. Stop writers, back up/validate the
+files and verify no active writer before removing a confirmed stale lock under
+separate approval. Never automatically break locks or reset private storage.
+See the [corrective review](../README.md#corrective-security-review).
+
+Production is pinned to `9e83676856e38f1f34a17ce5bf44fe631b8d2f15`, deployment
+`96f284b4-a179-4421-81cc-62ba849f7743`. Preserve this rollback reference and the
+existing volume in `us-east4-eqdc4a`. Do not apply either pending region/replica
+change. Candidate code review does not authorize unpinning, changing secrets or
+restarting the service. No workspace-schema migration is introduced.
 
 ## Required live verification before acceptance
 
@@ -87,7 +96,7 @@ state, not a guessed domain. Record timestamp, commit SHA and deployment ID:
 - Unauthenticated `POST /api/workspace` and `POST /mcp` → 401.
 - Cross-origin workspace requests → 403; forged Sites identity headers do not
   replace verified per-user authorization. Public `/api/companion` cannot read the workspace.
-- Complete the one existing Atmosphere sign-in with the configured owner identity.
+- Complete the one existing Atmosphere sign-in independently with two synthetic test identities.
   Verify another DID cannot open private records. Do not enter a bearer key in the browser.
   Create a disposable synthetic project with a unique label; record its ID.
 - MCP machine bearer does not grant access to either person's private workspace;

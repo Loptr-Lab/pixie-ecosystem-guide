@@ -55,7 +55,7 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
     const origin=request.headers.origin;
     if((origin&&new URL(origin).host!==host)||request.headers['sec-fetch-site']==='cross-site'){json(403,{error:'Invalid workspace origin'});return;}
     let principal=null;try{principal=localOwner?null:await identity?.current(request);}catch{json(503,{error:'Owner identity verification is unavailable.'});return;}
-    if(url.pathname==='/api/workspace/capabilities'&&request.method==='GET'){json(200,{localOwner,authenticated:!!principal,identityConfigured:!!identity,csrf:principal?.csrf||null,modelConfigured:!!model,modelEndpoint:model?new URL(process.env.PIXIE_MODEL_URL||'https://configured-provider.invalid').origin:null});return;}
+    if(url.pathname==='/api/workspace/capabilities'&&request.method==='GET'){json(200,{localOwner,authenticated:!!principal,did:principal?.did||null,identityConfigured:!!identity,csrf:principal?.csrf||null,modelConfigured:!!model,modelEndpoint:model?new URL(process.env.PIXIE_MODEL_URL||'https://configured-provider.invalid').origin:null});return;}
     if(url.pathname!=='/api/workspace'){json(404,{error:'Not found'});return;}
     if(request.method!=='POST'){response.writeHead(405,{Allow:'POST'});response.end();return;}
     if(!localOwner&&!principal){json(401,{error:'Sign in with your Atmosphere identity to open your private workspace.'});return;}

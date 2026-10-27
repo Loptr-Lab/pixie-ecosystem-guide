@@ -31,6 +31,11 @@ html{scroll-padding-bottom:110px}footer{padding-bottom:125px}.helper-setting{dis
 .account-options [role=option][aria-selected=true],.account-options [role=option]:hover{background:var(--account-selected,#c4e6d9);color:var(--account-selected-text,#132d29)}
 .account-hint{font:inherit;font-size:1em;line-height:1.55;color:inherit;opacity:1;margin:8px 0 12px;max-width:75ch;overflow-wrap:anywhere}
 .account-hint:empty{display:none}
+/* Preserve the existing light palette while keeping shared controls readable. */
+:root[data-pixie-theme=light] .workspace-nav button{color:var(--text)}
+:root[data-pixie-theme=light] .account-menu .account-panel button{color:#fff}
+:root[data-pixie-theme=light] .device-context{color:var(--text);background:var(--panel)}
+:root[data-pixie-theme=light] .device-context .note{color:var(--muted)}
 .account-panel{padding:24px;margin-block:24px;border:1px solid currentColor;border-radius:12px;min-width:0}
 .account-panel summary{cursor:pointer;min-height:48px;font-size:1.1rem;font-weight:650}
 .account-panel p{max-width:75ch;overflow-wrap:anywhere}
