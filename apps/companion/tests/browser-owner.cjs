@@ -7,7 +7,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
  const {createFileWorkspaceStore}=await import('../lib/workspace-store.mjs');
  const {syntheticProvider,fixtureFetch,owner,origin,host}=await import('./fixtures/owner-identity.mjs');
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'pixie-browser-owner-')),provider=syntheticProvider();let server,base;
- const start=async()=>{const identity=createOwnerIdentity({ownerDid:owner,secret:'c'.repeat(64),file:path.join(dir,'identity.enc'),oauthFactory:provider.factory});await identity.ready();server=createCompanionServer({identity,identityConfig:null,modelProvider:null,token:'synthetic-machine-only-'.repeat(3),workspaceStore:createFileWorkspaceStore(path.join(dir,'workspace.json'))});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));base='http://127.0.0.1:'+server.address().port;};
+ const start=async()=>{const identity=createOwnerIdentity({ownerDid:owner,secret:'c'.repeat(64),file:path.join(dir,'identity.enc'),oauthFactory:provider.factory});await identity.ready();server=createCompanionServer({identity,identityConfig:null,modelProvider:null,token:'synthetic-machine-only-'.repeat(3),workspaceStore:createFileWorkspaceStore(path.join(dir,'workspace.json')),workspaceFile:path.join(dir,'workspace.json')});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));base='http://127.0.0.1:'+server.address().port;};
  const browser=await chromium.launch({headless:true,executablePath:process.env.PIXIE_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox']});
  const mount=async storageState=>{const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,storageState});await context.route('**/*',async route=>{
   const request=route.request(),url=new URL(request.url());
@@ -23,7 +23,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
   await start();context=await mount();let page=await context.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto(origin+'/#creator');await page.getByRole('heading',{name:'Greetings. Let’s keep the thread.'}).waitFor();
   assert.equal(await page.getByLabel('Server connection key').count(),0);
-  await page.goto(origin+'/#account');await page.getByRole('button',{name:'Continue with Atmosphere',exact:true}).click();
+  await page.goto(origin+'/#account');await page.getByLabel('Find your atmosphere account').fill('owner.test');await page.getByRole('button',{name:'Continue with Atmosphere',exact:true}).click();
   await page.getByText('Your atmosphere identity is connected.',{exact:true}).waitFor();
   await page.getByRole('button',{name:'My projects',exact:true}).click();const w=page.locator('.creator-workspace');
   await w.getByLabel('Project name',{exact:true}).fill('Synthetic one-sign-in project');await w.getByRole('button',{name:'Create and save project'}).click();await w.getByRole('heading',{name:'Synthetic one-sign-in project',exact:true}).waitFor();
