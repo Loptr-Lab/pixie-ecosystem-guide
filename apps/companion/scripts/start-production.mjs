@@ -34,7 +34,7 @@ export async function startProduction(env=process.env,{oauthFactory}={}){
   finally{if(handle){await handle.close();await unlink(probe);}}
  };
  await readyCheck();
- const server=createCompanionServer({token:config.token,workspaceStore:store,allowLocalOwner:false,readyCheck,identity,identityConfig:null});
+ const server=createCompanionServer({token:config.token,workspaceStore:store,workspaceFile:config.file,allowLocalOwner:false,readyCheck,identity,identityConfig:null});
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(config.port,config.host,resolve);});
  return server;
 }
