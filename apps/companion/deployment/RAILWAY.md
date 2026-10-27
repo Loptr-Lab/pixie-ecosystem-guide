@@ -50,8 +50,9 @@ browser bundle at private Railway storage or place an owner token in build varia
 4. Privately configure `NODE_ENV=production`, `PIXIE_LOCAL_OWNER=0` and a random
    `PIXIE_MCP_TOKEN` of at least 32 characters. Do not send the token in chat,
    URLs, screenshots, PRs or logs. It is now exclusively a machine MCP credential.
-   Configure the independently verified `PIXIE_OWNER_DID` and separate private
-   `PIXIE_SESSION_SECRET` as specified in [owner identity configuration](../README.md#owner-identity-configuration).
+   Configure a separate, privately generated `PIXIE_SESSION_SECRET` as described in
+   [Atmosphere identity and isolated storage](../README.md#atmosphere-identity-and-isolated-project-storage).
+   `PIXIE_OWNER_DID` is optional admin metadata, not a restriction on supported sign-ins.
    No model key is required to run the workspace. No deployed settings are changed
    by this source review; do not apply these settings or unpin production implicitly.
    See `production.env.example` for the non-secret variable list.
@@ -65,9 +66,10 @@ browser bundle at private Railway storage or place an owner token in build varia
    edge. Verify HTTPS and plain-HTTP redirect before entering any credentials.
    Do not switch custom domains or publish a private service over plain HTTP.
    No public access to projects is permitted: UI loads publicly but workspace API
-   requires the verified owner cookie; MCP requires the separate machine bearer.
-   The browser has no connection-key form and never uses `PIXIE_MCP_TOKEN`.
-   This is one owner/store, not per-user authorization. Readiness/health return
+   requires a verified Atmosphere session for that specific DID. A machine MCP
+   bearer never grants unscoped access to user workspaces. The browser has no
+   connection-key form and never uses `PIXIE_MCP_TOKEN`. Per-DID project files
+   live under a server-derived hashed path on the same private volume. Readiness/health return
    only service availability, never project records.
 
 The JSON file store serializes writes within one process. Keep exactly one
@@ -84,21 +86,21 @@ state, not a guessed domain. Record timestamp, commit SHA and deployment ID:
 - `GET /ready` → 200; `/health` → 200, no private content.
 - Unauthenticated `POST /api/workspace` and `POST /mcp` → 401.
 - Cross-origin workspace requests → 403; forged Sites identity headers do not
-  replace verified owner authorization. Public `/api/companion` cannot read the workspace.
+  replace verified per-user authorization. Public `/api/companion` cannot read the workspace.
 - Complete the one existing Atmosphere sign-in with the configured owner identity.
   Verify another DID cannot open private records. Do not enter a bearer key in the browser.
   Create a disposable synthetic project with a unique label; record its ID.
-- Authenticated MCP `workspace_get` of that exact ID returns the same saved data.
-  The runtime browser and MCP share the one mounted JSON file. Inspect page
-  source/static assets/network failures to confirm no token/private record leak.
+- MCP machine bearer does not grant access to either person's private workspace;
+  authorization must be explicitly principal-scoped before machine workspace tools
+  are enabled. Inspect static assets/network failures for private data leaks.
 - Restart the **same existing service** once after a backup; then verify readiness
-  and retrieve that ID through both browser and MCP. Verify the same volume is
+  and retrieve both test projects through their respective accounts. Verify the same volume is
   attached. Test a redeploy as well before claiming durable migration acceptance.
 - Remove only the disposable project with explicit ID confirmation. Preserve
   existing work. Log status codes/IDs or redacted evidence, never keys or content.
 
-Local synthetic production tests perform auth rejection, same-store API/MCP
-reads, full server restart recovery, protected-file rejection and corrupt-state
+Local synthetic production tests perform auth rejection, per-user separation,
+blocked unscoped MCP access, full server restart recovery, protected-file rejection and corrupt-state
 readiness failure. They do not prove Railway volume persistence or remote TLS.
 
 ## Rollback and remaining access blocker
@@ -110,9 +112,4 @@ This release uses the existing workspace schema. If readiness fails, stop and
 repair/restore a reviewed backup; never replace saved data with an empty workspace.
 The ChatGPT Site remains the existing working fallback; do not retire it.
 
-At preparation time there are no callable Railway plugin tools, no Railway CLI
-installation/link, no configured Railway secret/identity binding, and no Railway
-or Vercel token environment variable in this session. Existing Railway service ID,
-volume attachment and runtime domain are therefore unverified and cannot be
-safely changed. Enable the authenticated Railway connection (do not paste a token)
-and identify the existing Companion service to apply this configuration.
+Current Railway service and volume must be checked against connected Railway state before any deployment; do not assume this documentation is live proof of the candidate revision. Never apply unrelated staged configuration changes.
