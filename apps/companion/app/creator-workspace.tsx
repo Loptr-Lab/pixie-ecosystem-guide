@@ -2,6 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {connectWorkspace} from '../lib/workspace-browser.mjs';
 import {resumeProject} from '../lib/workspace.mjs';
+import DeviceContext from './device-context';
 type Source={id:string;title:string;url:string;origin:string;excerpt:string;creatorCheckedOn:string;checkedAt:string|null;checkState:string;lastError:string};
 type Task={id:string;title:string;status:string;progress:string;blocker:string;nextAction:string;completionEvidence:string;updatedAt:string};
 type Project={id:string;name:string;purpose:string;outcome:string;currentState:string;nextAction:string;archived:boolean;createdAt:string;updatedAt:string;sources:Source[];notes:{id:string;text:string;createdAt:string;kind:string}[];tasks:Task[];messages:{id:string;role:string;text:string;kind:string;createdAt:string}[];handoff:string;activity:{at:string;action:string}[]};
@@ -35,7 +36,7 @@ export default function CreatorWorkspace(){
  const resume=project?resumeProject(project):null;
  return <section className="creator-workspace" aria-labelledby="creator-title">
  <div className="creator-heading"><div><p className="eyebrow">YOUR CREATIVE WORK</p><h1 id="creator-title">Greetings. Let’s keep the thread.</h1><p>Create a project, choose one next action, and return with your work intact.</p></div>
- <fieldset className="workspace-preferences"><legend>Reading preferences</legend><label>Theme<select aria-label="Theme" value={theme} onChange={e=>setTheme(e.target.value)}><option value="dark">Dark</option><option value="light">Light</option></select></label><label>Text size<select aria-label="Text size" value={fontSize} onChange={e=>setFontSize(e.target.value)}><option value="18">Standard · 18px</option><option value="20">Large · 20px</option><option value="24">Extra large · 24px</option></select></label></fieldset></div>
+ <fieldset className="workspace-preferences"><legend>Reading preferences</legend><label>Theme<select aria-label="Theme" value={theme} onChange={e=>setTheme(e.target.value)}><option value="dark">Dark</option><option value="light">Light</option></select></label><label>Text size<select aria-label="Text size" value={fontSize} onChange={e=>setFontSize(e.target.value)}><option value="18">Standard · 18px</option><option value="20">Large · 20px</option><option value="24">Extra large · 24px</option></select></label><DeviceContext/></fieldset></div>
  <p className="workspace-storage">{connection?.notice||'Opening private storage…'}</p>
  <p role="status" aria-live="polite">{loading?'Opening your workspace…':busy?'Working…':notice}</p>{error&&<p className="error" role="alert">{error}</p>}
  {connection?.mode==='server'&&!connection.localOwner&&<details className="creator-card"><summary>Connect to your private server workspace</summary><p>Use the connection key configured by your server owner. It stays in this tab and is not included in backups. Do not enter a model-provider key here.</p><label>Server connection key<input type="password" autoComplete="off" value={key} onChange={e=>setKey(e.target.value)}/></label><button onClick={unlock} disabled={busy}>Open private workspace</button></details>}
