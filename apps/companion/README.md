@@ -115,52 +115,45 @@ Client ID, metadata, redirect and atproto-only scope remain unchanged. No provid
 or domain is added. Browser JavaScript cannot assert ownership or supply an issuer,
 redirect, DID or bearer credential to authorize private workspace operations.
 
-### Owner identity configuration
+### Atmosphere identity and isolated project storage
 
-Set `PIXIE_OWNER_DID` to the owner's independently verified, stable DID, never a
-display name, unverified handle or a DID taken from a login request. Maintainers
-must confirm the DID out of band before configuring it. Set `PIXIE_SESSION_SECRET`
-privately to 32 cryptographically random bytes encoded as 64 lowercase hex
-characters, distinct from `PIXIE_MCP_TOKEN`. Do not paste either secret into chat,
-GitHub, browser code or Vite/build variables. No real DID/key is committed here.
-Missing owner configuration disables private browser access; partial/invalid
-configuration fails closed. Machine MCP remains independently bearer-protected.
+The published Railway Companion must support **one Atmosphere sign-in per person**.
+Any supported AT Protocol identity can authenticate. The server verifies the OAuth
+session and the returned DID before authorizing browser operations. Each verified
+DID resolves to a distinct server-owned hashed filename under the existing private
+volume's `users/` directory. No handle, path, user ID or ownership claim supplied
+in an API request may select another person's workspace. Each user's project list,
+selected project, edits, exports, imports, deletion and model context are isolated.
 
-The server verifies OAuth state, issuer, PKCE, token exchange and DPoP using the
-official SDK; only the configured DID can receive a random opaque `__Host-` cookie
-with Secure, HttpOnly and SameSite=Lax. Sessions expire after eight hours. Exact
-Host/Origin, browser-bound one-time OAuth state and per-session CSRF headers protect
-login, logout and workspace requests. The MCP bearer is rejected by the browser
-workspace endpoint, and a browser cookie cannot authorize MCP.
+`PIXIE_SESSION_SECRET` is a separate 32-byte random hex encryption key (64
+lowercase hex characters), stored **only** in Railway's private variables, never
+in browser code, screenshots, issues or shared backups. `PIXIE_OWNER_DID` is
+optional administrative metadata; it is **not** an admission list or a grant to
+other people's projects. A configured admin still sees only their own workspace.
+`PIXIE_MCP_TOKEN` is exclusively for machine MCP authentication and does not
+implicitly authorize any user's private project data. Unscoped machine requests
+for workspace operations are denied until a separately reviewed principal/grant
+model exists. Preserve the existing Site OAuth configuration.
 
-OAuth keys/tokens, transaction state and hashed browser sessions are encrypted
-with AES-256-GCM in `identity.enc`, beside `PIXIE_DATA_FILE` on the existing private
-volume, using atomic writes and 0600 permissions. No database/service or workspace
-schema migration is introduced. Back up this encrypted file and its independent
-key securely; exclude it from shared exports. Keep one server/writer, as already
-required. Do not change the encryption key or delete/reset identity state to mask
-an error. Changing the owner DID invalidates existing browser authorization.
+The server uses the existing AT Protocol Node OAuth SDK, encrypted state storage,
+opaque Secure/HttpOnly/SameSite=Lax cookies, explicit Host/Origin and CSRF checks,
+and server-verified, short-lived sessions. Sign-out and session expiry deny access
+without deleting saved projects or other people's sessions. There is **no** second
+browser key, no new database/service, and no automatic migration.
 
-Existing Railway browser-only OAuth sessions cannot safely be promoted into server
-authorization: one fresh Atmosphere sign-in is required. There is no second key
-entry. Existing Site sessions, creator files, IndexedDB and reading preferences
-are preserved. Server cookies/OAuth state survive restart with the same private
-file/key. Sign-out invalidates server browser sessions and pending logins first,
-then attempts provider revocation; local private access stays revoked if the
-provider is unavailable. Real provider revocation still requires live acceptance.
+The existing `PIXIE_DATA_FILE` (for example `/data/workspace.json`) is legacy,
+**unowned** project data. Keep it untouched and unassigned until ownership is
+confirmed and a separately reviewed migration/export is approved. Never treat the
+first DID to sign in as its owner. Keep the persistent volume, encrypted identity
+state, backups and one-writer restriction intact. Railway failure must not cause
+fallback to an anonymous browser workspace masquerading as server data.
 
-`node tests/browser-owner.cjs` exercises one sign-in through the actual server
-cookie/workspace boundary with a synthetic provider, including restart, reopening,
-cross-tab sign-out, reading preferences and reflow. The older browser-identity
-fixture below checks the preserved browser-SDK path for Site/static use.
-
-`node tests/browser-identity.cjs` (with the same Playwright variables described
-below) exercises both origins' sign-in initiation, callback initialization,
-restoration, revocation/sign-out, account switching and invalid-origin rejection
-using a mocked SDK and synthetic identities. It does not test real provider
-authorization, PKCE/state/DPoP cryptography, token exchange or Safari's storage.
-Live Railway and original-Site provider round trips and physical iPad/Safari
-acceptance remain required. Do not retire or redeploy the original Site here.
+Verification includes two independent synthetic accounts and full sign-in →
+create → save → reopen → sign-out flows; cross-user read/write/export/import/erase
+and machine access must fail. These tests do not replace live provider, iPad Safari,
+VoiceOver, session-restoration, persistence or restart acceptance. Do not merge,
+deploy, change the domain or retire the original Site without a separate release
+review and authorization.
 
 ## Supported operations: read versus draft versus execution
 
