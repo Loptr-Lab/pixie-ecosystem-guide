@@ -1,5 +1,9 @@
 # PIXIE hosting and DNS
 
+Historical hosting/DNS handoff from 18 October 2026. For current source authority,
+release blockers and the scope freeze, use [Companion status](COMPANION-HOSTING-STATUS.md).
+These retained DNS instructions are not a current change request or authorization.
+
 Decision recorded 18 October 2026: use the existing public GitHub guide as the
 PIXIE front door; preserve the working companion runtime and plugin connection.
 Do not create another guide, repo or hosting service to accomplish this.
@@ -9,7 +13,7 @@ Do not create another guide, repo or hosting service to accomplish this.
 | Component | Source / hosting | Purpose |
 |---|---|---|
 | Public PIXIE front door | This repository / GitHub Pages | Explain PIXIE and route to the right existing tool |
-| Contributor coordination runtime | Existing Project Companion Site, version 12 | Project catalog, draft preparation and explicit GitHub issue reads |
+| Contributor coordination runtime | Existing Project Companion Site (preserved during acceptance) | Project catalog, draft preparation and explicit GitHub issue reads |
 | Creator workflow | ibloud/pixie-creator-os / its existing Pages site | Mobile activation and reporting preparation; manual sharing |
 | Holdings | ibloud/pixie-holdings / its existing Pages site | Synthetic consequence test bench |
 
@@ -20,12 +24,12 @@ run the current server endpoints. Those endpoints presently include
 headers. Moving their server requires an explicit replacement for authentication,
 deployment and acceptance testing, not just DNS or a copied HTML file.
 
-This repository currently publishes the guide source, not the complete companion
-application source. Full runtime-source publication and deployment synchronization
-remain a separate bounded task. Do not claim the server has migrated or that a
-source mirror is its new authority without an actual release handoff.
+The root guide remains separate from the authoritative Companion source now
+preserved in this repository on `creator-workspace`, under `apps/companion`, in
+PR #5. That PR is not merged into `main`. Source preservation is not a completed
+server migration; see the current status linked above.
 
-## Verified blocker
+## Historical guide deployment blocker — 18 October 2026
 
 At commit f595cce2546e8346737170227ab46a99ee2e3e7e the guide's build and artifact
 upload succeeded, but the deployment job returned 404 and explicitly requested

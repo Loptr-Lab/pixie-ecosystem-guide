@@ -6,6 +6,17 @@ Loptr Lab identifies its current transmedia ARG concept focus as *50 Ways to Lea
 
 The guide describes PIXIE as a recurring, project-specific helper/interface idea. The owner’s comparison to VIKI from *I, Robot* is presented as a warning against overriding people’s choices, not as a claim about current software. MCP is a connection protocol, not the character and not evidence that all projects share access. Project cards link to source notes and state what is live, experimental, planned, or not currently working.
 
+## Current development focus
+
+**One Companion. Specialized projects. No duplicate workflows.** Finish the existing
+Companion in `apps/companion` ([PR #5](https://github.com/Loptr-Lab/pixie-ecosystem-guide/pull/5))
+and support the contributor already assigned to Holdings #18 before expanding scope.
+The application source is on `creator-workspace` while review remains unmerged;
+this `main` branch still runs the separate guide. See
+[Companion status and responsibilities](COMPANION-HOSTING-STATUS.md) for verified
+checks, release blockers and the assignment's synthetic-only boundary. Follow the
+[existing training contribution process](https://github.com/Loptr-Lab/training/blob/main/CONTRIBUTING.md).
+
 ## Participation and feedback
 
 Visitors can start with one project, ask what is actually working, flag confusing wording, or identify an accessibility barrier. For code, follow the instructions in that project’s own repository. Loptr Lab says current open reviews and contributions are voluntary and unpaid; scope, time, public credit, and an exit path should be agreed in writing before work begins. Participation does not promise employment, ownership, academic credit, or future pay. See the [collaboration pathways](https://ibloud.github.io/collaborate/) and [mission and participation terms](https://github.com/ibloud/ibloud.github.io/blob/main/MISSION.md).
