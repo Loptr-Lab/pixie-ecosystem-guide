@@ -13,7 +13,7 @@ const fail=(status,message)=>Object.assign(Error(message),{status});
 function cookie(request,name){const values=String(request.headers.cookie||'').split(';').map(x=>x.trim()).filter(x=>x.startsWith(name+'='));if(values.length!==1)return '';const value=values[0].slice(name.length+1);return /^[A-Za-z0-9_-]{43}$/.test(value)?value:'';}
 function setCookie(name,value,maxAge){return name+'='+value+'; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age='+maxAge;}
 export function ownerIdentityConfiguration(env){
- if(!env.PIXIE_SESSION_SECRET)return null;
+ if(!env.PIXIE_OWNER_DID&&!env.PIXIE_SESSION_SECRET)return null;
  if(env.PIXIE_OWNER_DID&&!/^did:(plc:[a-z2-7]{24}|web:[A-Za-z0-9._%:-]+)$/.test(env.PIXIE_OWNER_DID))throw Error('Invalid administrative DID.');
  if(!/^[a-f0-9]{64}$/.test(env.PIXIE_SESSION_SECRET||'')||env.PIXIE_SESSION_SECRET===env.PIXIE_MCP_TOKEN)throw Error('Configure a separate identity encryption key.');
  if(!env.PIXIE_DATA_FILE||!path.isAbsolute(env.PIXIE_DATA_FILE))throw Error('Identity storage requires the configured private workspace path.');
