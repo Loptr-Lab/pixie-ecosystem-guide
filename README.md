@@ -43,3 +43,43 @@ Use this existing GitHub repository as PIXIE’s public guide/front door. Keep t
 working Project Companion Site and plugin identity in place during acceptance.
 See [HOSTING-AND-DNS.md](HOSTING-AND-DNS.md) for the exact DNS record, verified
 deployment blocker and separation between source development and server hosting.
+
+## Current development priorities — 27 October 2026
+
+**One Companion. Specialized projects. No duplicate workflows.** Finish and
+stabilize the existing Companion before adding features or integrating another
+project. This repository is its authoritative source; the `apps/companion/`
+implementation is under review in [PR #5](https://github.com/Loptr-Lab/pixie-ecosystem-guide/pull/5),
+not yet on main. The guide remains intact. Source review, a static preview,
+a running server and an accepted release are separate states.
+
+| Existing project | Responsibility and current boundary |
+| --- | --- |
+| [Companion source](https://github.com/Loptr-Lab/pixie-ecosystem-guide/pull/5) | One project/task/checkpoint experience and its authenticated MCP; no second dashboard. |
+| [Training](https://github.com/Loptr-Lab/training) | Contributor onboarding and instructions; [existing contributor workflow](https://loptr-lab.github.io/training/pixie-contributors.html). |
+| [Creator OS](https://github.com/ibloud/pixie-creator-os) | Specialized creative sessions and workflows. Compare its task, source, handoff and storage boundaries before any integration; no integration is authorized by this table. |
+| [Holdings](https://github.com/ibloud/pixie-holdings) | Synthetic consequence testing, not the Companion's runtime or private archive service. |
+| [Device Stewardship](https://github.com/ibloud/pixie-device-stewardship) | Device, accessibility and file-stewardship specifications and bounded adapters; the read-only iCloud adapter remains separate. |
+| [Older Device Stewardship repository](https://github.com/ibloud/pixie-device-stewardship-iH5F) | Archival candidate only. Verify unique history, dependencies and consumers before proposing archival; preserve it unchanged meanwhile. |
+
+Immediate acceptance work is production startup and `/ready`, persistent storage
+and restart recovery, authenticated MCP without private-record exposure, browser
+operation and physical iPad accessibility. Keep “Device and local time” only in
+My projects → Reading preferences. No new functionality is required for this work.
+See [current hosting evidence and remaining blockers](HOSTING-AND-DNS.md#companion-runtime-status--27-october-2026);
+PR #5 carries implementation and local-test evidence, not completed live acceptance.
+
+[Holdings issue #18](https://github.com/ibloud/pixie-holdings/issues/18) is assigned
+to `sweetytweety2406-wq`. Their bounded deliverable is a proposed historical Drive
+archive-mapper schema, one synthetic example and a workflow in a small draft PR
+to Holdings. Do not duplicate that work, read private Drive data or expand the
+assignment without maintainer agreement. Review the eventual draft against the
+issue's required fields, privacy boundary and usability; give specific, actionable
+feedback. No mapper implementation, live integration or migration is authorized.
+
+Before each change inspect the affected source/issues/docs, identify a verified
+problem, reuse existing work, make the smallest correction and run relevant checks.
+Report observed results and unverified acceptance separately. Follow the
+[canonical ecosystem architecture](https://github.com/ibloud/ibloud.github.io/blob/main/docs/ECOSYSTEM_ARCHITECTURE.md)
+and existing participation terms. No merge, deployment, deletion, Tangled sync,
+domain change or plugin replacement is authorized by this priority record.
