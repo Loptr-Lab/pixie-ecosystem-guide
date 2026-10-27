@@ -5,6 +5,7 @@ on:
     paths:
       - 'apps/companion/**'
       - '.github/workflows/companion-ci.yml'
+      - 'AGENTS.md'
   push:
     branches:
       - creator-workspace
@@ -32,6 +33,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify binding project instructions
+        run: |
+          test -s ../../AGENTS.md
+          grep -q 'Every authenticated DID gets a private workspace' ../../AGENTS.md
+          grep -q 'legacy unowned workspace file' ../../AGENTS.md
       - name: Enable repository-pinned pnpm
         run: corepack enable
       - name: Install exact lockfile dependencies
