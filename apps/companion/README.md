@@ -41,14 +41,45 @@ approved deployment's bind address; changing them does not provision or deploy a
 service. The existing Vite build writes `tangled-site/`, ignored generated output.
 The guide's root build does not copy or publish this module.
 
-This review built and type-checked outside Sites with available pinned
-dependencies. A separate clean offline install was attempted and blocked because
-the package mirror lacked supply-chain metadata (`ERR_PNPM_NO_OFFLINE_META` for
-`@alloc/quick-lru`). No policy bypass, lockfile rewrite or false clean-install
-claim was made. Verify a fresh network-enabled checkout/install before acceptance.
-The recovered dependency declarations/lock remain intact apart from application
-name and runnable script adaptation; unused starter dependency reduction is not
-silently represented as completed.
+Frozen installation succeeded using the verified local pnpm cache after restoring
+`pnpm-workspace.yaml`, which was omitted from recovery. Locked package versions
+and the supply-chain policy were preserved. This is not evidence of a fresh
+network installation on another machine.
+
+## Persistent creator workspace
+
+My projects supports creating, selecting, editing, archiving and restoring projects;
+purpose, outcome, state and next action; tasks with progress, blockers and completion
+evidence; creator notes; sources with separately labelled supplied excerpts and
+retrieval results; and editable, downloadable handoffs. Backup import validates the
+whole file before saving and never overwrites existing project IDs. Conflicts can
+be imported explicitly as distinct copies. Export before changing hosting origins.
+Unsaved edits are excluded from exports and warned about when switching projects.
+
+The independent runner stores this private workspace in `.pixie-data/workspace.json`
+(or `PIXIE_DATA_FILE`) with atomic writes and owner-only permissions. UI and
+`workspace_*` MCP tools use the same service and store. Back up the data file along
+with exports; Git does not back it up. Loopback development permits the local
+owner. Network access requires the private bearer key; production must use HTTPS,
+`NODE_ENV=production` and reviewed authentication. This is a single-owner store,
+not multi-user account isolation. Never share the owner key with testers.
+
+A static-only web preview instead uses that browser/origin's IndexedDB, explicitly
+labelled in the interface. It survives reloads and normal browser restarts but not
+browser-data deletion. It does not share data with the independent MCP, other
+origins or other devices. Private browsing can discard it. No synchronization is
+active. Exports contain project content, not connection keys.
+
+Conversation is enabled only when the independent server has all three private
+settings: `PIXIE_MODEL_URL` (HTTPS OpenAI-compatible chat-completions endpoint),
+`PIXIE_MODEL_API_KEY`, and `PIXIE_MODEL_NAME`. The user explicitly consents before
+sending selected-project context. Bounded recent notes, excerpts, tasks and messages
+are sent to that provider; other projects and credentials are excluded. Answers
+are labelled AI suggestions, execute no actions, and do not become verified facts.
+No provider is configured in this checkpoint: the interface reports unavailable
+and saves no fabricated reply. Live provider acceptance remains outstanding.
+Public-source checks currently support public GitHub text files; unsupported or
+failed checks remain visible as failures beside the retained supplied source.
 
 ## HTTP and MCP boundaries
 
@@ -84,7 +115,8 @@ OAuth. Do not retire the Site while that dependency remains.
 | check_task_action | Reports in-scope/out-of-scope/approval requirement. Executes nothing and grants no credentials. |
 
 No supported operation publishes, deploys, merges, sends correspondence, spends,
-deletes, grants repository access or approves canon. A scope check cannot constrain
+grants repository access or approves canon. Explicit confirmed workspace deletion
+affects only saved creator records; it does not delete repositories or sources. A scope check cannot constrain
 unrelated tools in a host, and an editable file is not cryptographic authorization.
 The companion's own task updates cannot silently change outcome, project, actions,
 constraints or completion criteria. A new scope requires a new explicitly reviewed
@@ -98,8 +130,9 @@ task ID and revision. Edits must update the working contract before export, and
 every import/update resets the public-safe review gate. Changing the selected
 project does not silently discard or reassign the working task.
 
-Only export public-safe material. Working text remains in tab memory; downloaded
-files belong to the user. Existing Remember/Forget retains only a public GitHub
+For public task stewardship, only export public-safe material. Its working text
+remains in tab memory; downloaded files belong to the user. The separate My projects
+workspace persists as described above; inspect private content before sharing exports. Existing Remember/Forget retains only a public GitHub
 issue pointer on that device. GitHub issues remain the shared contribution record.
 No opaque chat memory, cross-domain draft transfer or synchronization is claimed.
 MCP clients/hosting providers have their own retention. Do not enter credentials,
@@ -149,3 +182,27 @@ independent hosted behavior, live source access, accessibility, auth/client upda
 mirror mapping and every Site-bound dependency. Record exact source/build/client
 and human acceptance evidence. Source recovery, review publication, deployment,
 plugin update and Site retirement are distinct actions.
+
+## Current local verification and mirror review
+
+`pnpm test` includes persistent workspace round-trips, isolated project operations,
+validated non-overwriting imports, corrupt-file preservation, unavailable-model
+behavior, provider-context isolation, and private API/MCP state parity. Run
+`node tests/browser-workspace.cjs` after building, with the same Playwright/Chromium
+variables described above. It starts its own loopback servers and temporary file
+store; it never erases an existing workspace. It checks both server and static
+storage, browser restart, handoff edits, export/clear/restore, reading preferences,
+keyboard skip navigation and 320–1440 px reflow. Test data is fictional.
+
+The retained whole-root mirror helper now refuses this module layout.
+`scripts/prepare-module-mirror.mjs` prepares only a local review bundle from pinned
+source and Tangled commits. It projects `apps/companion` to the existing mirror
+root and retains both histories as parents. Projected commit IDs differ from
+GitHub IDs; exact module tree identity is recorded. Review deletions, ownership,
+privacy, hosting/build triggers and rollback before authorizing any application.
+There is no push mode and synchronization remains inactive.
+
+The existing Site MCP at
+`https://pixie-project-companion.ibloud-ivxx.chatgpt.site/mcp` remains separate and
+unchanged. A Vercel static preview serves the web interface only. This independent
+MCP has source tests, but hosted deployment and plugin connection remain unfinished.

@@ -53,5 +53,5 @@ test('planning and verification inspect real Git history without changing checko
 test('source must be reviewed GitHub HTTPS; absent origin cannot be replaced implicitly',()=>{
  for(const source of ['https://git.chatgpt-team.site/private/repo.git','git@github.com:a/b','https://user:secret@github.com/a/b','https://github.com/a/b?token=secret'])assert.throws(()=>validateSource(source));
  assert.equal(validateSource(github),github);
- assert.throws(()=>mirror(tangled,'--plan',{runGit:()=>{throw Error('No origin')}}),/Do not replace the existing Sites/);
+ assert.throws(()=>mirror(tangled,'--plan',{runGit:args=>{if(args[0]==='rev-parse')return process.cwd();throw Error('No origin')}}),/Do not replace the existing Sites/);
 });

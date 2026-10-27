@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Main-only synchronization. Planning reads remotes into an isolated temporary repo.
 import {execFileSync} from 'node:child_process';
-import {mkdtempSync, rmSync} from 'node:fs';
+import {existsSync,mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -37,6 +37,8 @@ export function mirror(remote, mode='--verify', {expectedSource, cwd=process.cwd
  validateRemote(remote);
  if (!['--plan','--verify','--push'].includes(mode)) throw Error('Choose --plan, --verify or --push.');
  const local = args => runGit(args, cwd);
+ const root=local(['rev-parse','--show-toplevel']);
+ if(existsSync(path.join(root,'apps/companion/server.mjs')))throw Error('This is the guide repository with a Companion module. Do not mirror the whole root. Use the read-only prepare-module-mirror.mjs mapping for review.');
  let source;
  try { source = validateSource(local(['remote','get-url','origin'])); }
  catch { throw Error('A reviewed owning GitHub HTTPS origin is required. Do not replace the existing Sites source or invent a GitHub destination.'); }

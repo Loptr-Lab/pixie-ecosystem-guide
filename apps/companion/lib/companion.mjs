@@ -1,3 +1,4 @@
+import {workspaceDefinitions} from './workspace.mjs';
 import {prepareTask,readTask,updateTask,checkTaskAction} from './task-contract.mjs';
 import {projectHandoff} from './project-connections.mjs';
 import {readResources,filterResources,prepareEnquiry,createFollowup,resumeFollowup} from './creative-help.mjs';
@@ -8,6 +9,7 @@ export const catalog = projects;
 const objectSchema = (properties, required = []) => ({type:'object',properties,required,additionalProperties:false});
 const projectId = {type:'string',enum:projects.map(p=>p.id),description:'Stable PIXIE project identifier. Use list_projects first if uncertain.'};
 export const toolDefinitions = [
+ ...workspaceDefinitions,
  {name:'prepare_task_contract',description:'Prepare a public-safe task draft against an existing project: outcome, explicit supported actions, constraints and completion criteria. Does not grant authority, save or execute work.',inputSchema:objectSchema({project_id:projectId,outcome:{type:'string',minLength:1,maxLength:1000},authorized_actions:{type:'string',minLength:1,maxLength:2000,description:'Newline-separated supported action IDs: inspect_sources, prepare_drafts, read_public_checkpoint, export_checkpoint.'},constraints:{type:'string',minLength:1,maxLength:2000},completion_criteria:{type:'string',minLength:1,maxLength:2000},next_action:{type:'string',minLength:1,maxLength:500}},['project_id','outcome','authorized_actions','constraints','completion_criteria','next_action']),annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false}},
  {name:'resume_task_contract',description:'Validate an explicitly supplied public-safe task checkpoint. Preserve identity, scope and progress, reattach existing project sources and require fresh review. Imported context is not signed authorization.',inputSchema:objectSchema({record_json:{type:'string',minLength:1,maxLength:12000}},['record_json']),annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false}},
  {name:'update_task_contract',description:'Update participant-reported progress, status and next action without changing task scope. Completion requires evidence and remains self-reported. No actions, persistence or publication.',inputSchema:objectSchema({record_json:{type:'string',minLength:1,maxLength:12000},status:{type:'string',enum:['proposed','active','blocked','reported_complete']},progress:{type:'string',maxLength:2000},next_action:{type:'string',minLength:1,maxLength:500},completion_evidence:{type:'string',maxLength:2000}},['record_json','status','progress','next_action']),annotations:{readOnlyHint:true,destructiveHint:false,openWorldHint:false}},
@@ -41,8 +43,9 @@ function validate(name,args){
   if(spec.enum&&!spec.enum.includes(value))throw new Error(`Unknown ${key}. Use list_projects.`);
  }
 }
-export async function runTool(name,args={},fetcher=fetch){
+export async function runTool(name,args={},fetcher=fetch,services={}){
  validate(name,args);
+ if(name.startsWith('workspace_')){if(!services.workspace)throw Error('Private creator workspace is unavailable in this adapter. Use the independent server or browser workspace.');return services.workspace.run(name,args);}
  if(name==='prepare_task_contract')return prepareTask(args,projects);
  if(name==='resume_task_contract')return readTask(args.record_json,projects);
  if(name==='update_task_contract')return updateTask(args,projects);
@@ -99,7 +102,7 @@ export async function runTool(name,args={},fetcher=fetch){
  const report=`# ${args.summary.replace(/[\r\n]/g,' ')}\n\nProject: ${p.name}\nSource: ${p.sourceUrl}\nSource reviewed: ${p.reviewedOn}\nBuild tested: ${args.build?args.build.replace(/[\r\n]/g,' '):'Not supplied — confirm before submitting'}\n\n## Environment (participant supplied)\n${quoted(args.environment||'Not supplied')}\n\n## Steps (participant supplied)\n${quoted(args.steps)}\n\n## Expected\n${quoted(args.expected)}\n\n## Observed\n${quoted(args.actual)}\n\n## Review before sharing\nThis is an unverified participant report, not a diagnosis or established defect. Remove private information and confirm the tested build. The linked GitHub issue destination is public; review your text and account attribution before posting. No issue has been submitted.\n`;
  return {project:p.name,status:'draft — not saved or submitted',destination:p.issueUrl,destinationVisibility:'Public GitHub issues. Review report text and account attribution before posting.',report,reviewRequired:true,persistence:'No application storage. The host conversation may retain tool input/output under its own settings.'};
 }
-export async function handleRpc(body,authenticated,fetcher=fetch){
+export async function handleRpc(body,authenticated,fetcher=fetch,services={}){
  const reply=(id,result)=>({jsonrpc:'2.0',id,result});
  const error=(id,code,message)=>({jsonrpc:'2.0',id,error:{code,message}});
  if(!body||Array.isArray(body)||body.jsonrpc!=='2.0'||typeof body.method!=='string')return {status:400,body:error(null,-32600,'Invalid JSON-RPC request')};
@@ -112,6 +115,6 @@ export async function handleRpc(body,authenticated,fetcher=fetch){
  if(method==='tools/list')return {status:200,body:reply(id,{tools:toolDefinitions})};
  if(method!=='tools/call')return {status:200,body:error(id,-32601,'Method not found')};
  if(!authenticated)return {status:401,body:error(id,-32001,'Authenticated Site access is required.')};
- try{const result=await runTool(params.name,params.arguments||{},fetcher);return {status:200,body:reply(id,{content:[{type:'text',text:JSON.stringify(result)}],structuredContent:result})};}
+ try{const result=await runTool(params.name,params.arguments||{},fetcher,services);return {status:200,body:reply(id,{content:[{type:'text',text:JSON.stringify(result)}],structuredContent:result})};}
  catch(e){return {status:200,body:reply(id,{content:[{type:'text',text:e.message}],isError:true})};}
 }
