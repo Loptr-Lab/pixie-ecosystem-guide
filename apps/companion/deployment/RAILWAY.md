@@ -86,6 +86,10 @@ existing volume in `us-east4-eqdc4a`. Do not apply either pending region/replica
 change. Candidate code review does not authorize unpinning, changing secrets or
 restarting the service. No workspace-schema migration is introduced.
 
+## Existing contributor acceptance workflow
+
+Use the already established [PIXIE contributor procedure](https://github.com/Loptr-Lab/training/blob/review/pixie-contributor-focus-2026-10-27/docs/pixie-contributors.md#pixie-private-workspace-acceptance--proposed-contributor-test) in Training PR #48. Contributors verify one Atmosphere sign-in, synthetic create/save/reopen, sign-out, accessibility and safe defect reporting; they do not handle Railway secrets, production backups, MCP access or real participant data. The maintainer must first verify encrypted volume backup and isolated recovery before releasing a candidate URL. The reviewed multi-account authorization tests remain a maintainer release gate. Preserve existing GitHub issue-based contribution and checkpoint flow; do not add a parallel onboarding process.
+
 ## Required live verification before acceptance
 
 Use the actual existing HTTPS URL, obtained from authenticated Railway service
