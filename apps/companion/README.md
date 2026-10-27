@@ -206,3 +206,14 @@ The existing Site MCP at
 `https://pixie-project-companion.ibloud-ivxx.chatgpt.site/mcp` remains separate and
 unchanged. A Vercel static preview serves the web interface only. This independent
 MCP has source tests, but hosted deployment and plugin connection remain unfinished.
+
+## Existing Railway service preparation
+
+Service-specific Railpack/start/readiness configuration is in `railway.json`.
+The existing guide root build is untouched. Use the fail-closed production launcher
+`node scripts/start-production.mjs`, with a privately configured owner token,
+local-owner bypass disabled and a real persistent volume. See
+[deployment/RAILWAY.md](deployment/RAILWAY.md) for exact existing-service settings,
+non-secret variables, verification evidence, rollback and current access blockers.
+This prepares configuration; it does not establish a deployed Railway runtime.
+The static Vercel preview continues to use browser storage and hosts no MCP.

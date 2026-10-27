@@ -13,7 +13,7 @@ export async function connectWorkspace(){
  if(!health){if(prior)throw Error('Your independent server is unavailable. Its saved projects have not been replaced. Start it and retry.');const service=createWorkspaceService(browserStore());return {mode:'browser',localOwner:true,modelConfigured:false,notice:'Private project data is stored in IndexedDB on this browser and origin. Export backups before clearing browser data. This is not cross-device synchronization.',run:(name,args)=>service.run(name,args)};}
  const response=await fetch('/api/workspace/capabilities',{cache:'no-store'});if(!response.ok)throw Error('Workspace capabilities unavailable.');const capabilities=await response.json();
  try{localStorage.setItem('pixie.workspace.backend','server');}catch{}
- return {...capabilities,mode:'server',notice:'Private projects are saved by the independent server. The browser and authorized MCP tools use this same workspace. This is a single-owner development workspace, not multi-user synchronization.',async run(name,args,token=''){
+ return {...capabilities,mode:'server',notice:'Private projects are saved by the independent server. The browser and authorized MCP tools use this same workspace. This is a single-owner workspace. The owner key grants access to all its projects; do not share it with testers.',async run(name,args,token=''){
   const response=await fetch('/api/workspace',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify({name,args})});const value=await response.json();if(!response.ok)throw Error(value.error||'Workspace request failed.');return value;
  }};
 }

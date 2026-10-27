@@ -25,3 +25,26 @@ Old standalone checkpoint d3467e8f58b64867c37c10350b9d510db3020fe6 and candidate
 ## Next review action
 
 Run the built Companion locally, create one non-sensitive project and review its saved handoff and backup. Review model/privacy and mirror mapping separately before authorizing any push or public testing deployment.
+
+## Railway preparation checkpoint — 27 October 2026
+
+Fetched creator-workspace 6f9e9f2909e1e284329d185100d97de8902ad8b2 by fast-forward,
+preserving the intervening CI and reading-preferences commits. All original 50
+tests passed again; the extended production suite passed 52/52, type checking and
+both production builds passed. Browser acceptance in server and static modes now
+asserts device/time is nested in Reading preferences, absent on Find help, and
+visible on My projects. Existing data/continuity journeys still pass.
+
+New production tests verify missing-auth/volume refusal, local-owner bypass off,
+401 without a bearer, shared API/MCP saved identity, full server restart recovery,
+404 for attempted private-file URLs, and 503 readiness for corrupt saved state.
+These tests use a temporary synthetic volume directory, not Railway storage.
+Actual Railway volume attachment, remote restart/redeploy persistence and edge TLS
+remain unverified. Authenticated Railway tools/credentials and the existing
+Companion service identity are missing. Do not claim those checks as completed.
+
+The existing Vercel integration reports a Ready preview for the reading-preferences
+commit; direct URL verification is blocked here by proxy CONNECT 403. Exact URL,
+non-secret existing-service configuration, rollback and acceptance checks are in
+`deployment/RAILWAY.md`. The Site, guide, installed plugin, domains and Tangled
+remain unchanged. No Railway deployment or provisioning has been performed.

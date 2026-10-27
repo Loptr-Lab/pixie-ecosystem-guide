@@ -22,7 +22,7 @@ async function body(request){
  for await(const chunk of request){length+=chunk.length;if(length>maximumBody)throw Object.assign(Error('Request too large'),{status:413});chunks.push(chunk);}
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
-export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,modelProvider,allowLocalOwner=false}={}){
+export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,modelProvider,allowLocalOwner=false,readyCheck}={}){
  const store=workspaceStore||createFileWorkspaceStore(process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)));
  const model=modelProvider===undefined?createModelProvider({url:process.env.PIXIE_MODEL_URL,key:process.env.PIXIE_MODEL_API_KEY,model:process.env.PIXIE_MODEL_NAME,fetcher}):modelProvider;
  const services={workspace:createWorkspaceService(store,{model,fetcher})};
@@ -30,6 +30,7 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
   const json=(status,value)=>{response.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});response.end(JSON.stringify(value));};
   try{
    const url=new URL(request.url,'http://localhost');
+   if(url.pathname==='/ready'){if(!readyCheck){json(503,{ready:false});return;}try{await readyCheck();json(200,{ready:true});}catch{json(503,{ready:false});}return;}
    if(url.pathname==='/health'){json(200,{service:'pixie-companion',mode:'independent',mcp:token.length>=32?'bearer-auth configured':'disabled until configured'});return;}
    if(url.pathname.startsWith('/api/workspace')){
     const host=request.headers.host||'';const hostName=host.replace(/:\d+$/,'');

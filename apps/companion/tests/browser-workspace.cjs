@@ -18,6 +18,10 @@ const assert=require('node:assert/strict');const fs=require('node:fs');const pat
   let page=context.pages()[0];const open=async()=>{await page.goto(base+'/#creator');await page.getByRole('heading',{name:'Greetings. Let’s keep the thread.'}).waitFor();await page.waitForFunction(()=>{const e=document.querySelector('.creator-workspace [role=status]');return e&&!/Opening|Working/.test(e.textContent)});};
   try{
    await open();const w=page.locator('.creator-workspace');
+   assert.equal(await w.getByRole('group',{name:'Reading preferences'}).locator('.device-context').count(),1);
+   assert.equal(await page.locator('header + .device-context').count(),0);
+   await page.getByRole('button',{name:'Find help',exact:true}).click();assert.equal(await page.getByText('Device and local time',{exact:true}).isVisible(),false);
+   await page.getByRole('button',{name:'My projects',exact:true}).click();assert.equal(await w.getByText('Device and local time',{exact:true}).isVisible(),true);
    if(!await w.getByLabel('Project name',{exact:true}).isVisible())await w.getByText('Create a project',{exact:true}).click();
    const name='Creator acceptance '+mode+' '+Date.now();
    await w.getByLabel('Project name',{exact:true}).fill(name);await w.getByLabel('What are you working on?').fill('A fictional original recording');await w.getByLabel('What would a useful outcome look like?').fill('A reviewed permission brief');
