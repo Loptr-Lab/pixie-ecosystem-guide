@@ -48,11 +48,17 @@ writeFileSync(path.join(output, "index.html"), builtHtml);
 for (const file of ["manus-routes.json", "logo.svg"]) {
   copyFileSync(path.join(root, file), path.join(output, file));
 }
-for (const file of ["app.js", "data.js", "styles.css"]) {
+for (const file of ["app.js", "data.js"]) {
   copyFileSync(path.join(root, "src", file), path.join(output, "src", file));
 }
+copyFileSync(path.join(root, "apps", "companion", "app", "globals.css"), path.join(output, "src", "styles.css"));
 copyFileSync(path.join(root, "assets", "pixie-ecosystem.jpeg"), path.join(output, "assets", "pixie-ecosystem.jpeg"));
 
 console.log("Static PIXIE guide built in public/ with the page content present in its initial HTML.");
 
 for (const file of ["make-room-for-the-work.pdf", "make-room-for-the-work.html"]) copyFileSync(path.join(root, "assets", file), path.join(output, "assets", file));
+
+
+copyFileSync(path.join(root, "assets", "pixie-sigil-proposal.png"), path.join(output, "assets", "pixie-sigil-proposal.png"));
+
+copyFileSync(path.join(root, "assets", "pixie-hero-proposal.png"), path.join(output, "assets", "pixie-hero-proposal.png"));
