@@ -115,3 +115,9 @@ for(const file of ['../index.html','../assets/make-room-for-the-work.html','../a
  const content=readFileSync(new URL(file,import.meta.url)).toString('latin1').replace(/\\([0-7]{1,3})/g,(_,octal)=>String.fromCharCode(parseInt(octal,8)));
  assert.ok(content.includes(canonical),file+' routes to canonical Companion');assert.ok(!content.includes(legacy),file+' has no active old Site navigation');
 }
+
+
+// Guard the current-main hosting correction during integration.
+assert.ok(!/^(?:<{7}|={7}|>{7})/m.test(html), 'Published guide must not contain unresolved merge markers.');
+assert.ok(html.includes('The live Companion runs on Railway.'), 'Keep the published Railway hosting disclosure.');
+assert.ok(!html.includes('separately hosted on ChatGPT'), 'Do not restore obsolete Companion hosting language.');
