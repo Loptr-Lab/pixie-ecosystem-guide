@@ -5,7 +5,7 @@ import { FOCUS_AREAS, PIXIE_ROLES } from "../src/data.js";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const appSource = readFileSync(new URL("../src/app.js", import.meta.url), "utf8");
 const buildSource = readFileSync(new URL("../scripts/build.mjs", import.meta.url), "utf8");
-const css = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
+const css = readFileSync(new URL("../apps/companion/app/globals.css", import.meta.url), "utf8");
 const routeManifest = JSON.parse(readFileSync(new URL("../manus-routes.json", import.meta.url), "utf8"));
 const roleIds = new Set(PIXIE_ROLES.map((role) => role.id));
 
@@ -121,3 +121,11 @@ for(const file of ['../index.html','../assets/make-room-for-the-work.html','../a
 assert.ok(!/^(?:<{7}|={7}|>{7})/m.test(html), 'Published guide must not contain unresolved merge markers.');
 assert.ok(html.includes('The live Companion runs on Railway.'), 'Keep the published Railway hosting disclosure.');
 assert.ok(!html.includes('separately hosted on ChatGPT'), 'Do not restore obsolete Companion hosting language.');
+
+
+// All public HTML consumers ship the same PIXIE design; generated copies cannot drift.
+assert.equal(readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8').includes('@import "../apps/companion/app/globals.css"'), true);
+assert.ok(!css.includes('!important'), 'Resolve shared design conflicts at their source.');
+if (existsSync(new URL('../public/src/styles.css', import.meta.url))) {
+  assert.equal(readFileSync(new URL('../public/src/styles.css', import.meta.url), 'utf8'), css, 'Guide build must copy the authoritative stylesheet exactly.');
+}

@@ -86,7 +86,7 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
    const file=path.resolve(root,'.'+(decoded==='/'?'/index.html':decoded));
    if(!file.startsWith(path.resolve(root)+path.sep)){json(404,{error:'Not found'});return;}
    const info=await stat(file);if(!info.isFile())throw Error('Not a file');
-   const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
+   const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'};
    const type=types[path.extname(file)];if(!type){json(404,{error:'Not found'});return;}
    response.writeHead(200,{'Content-Type':type,'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Cache-Control':'no-store'});
    response.end(request.method==='HEAD'?undefined:await readFile(file));
