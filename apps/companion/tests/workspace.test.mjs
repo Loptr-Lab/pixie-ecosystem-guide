@@ -1,0 +1,160 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,rm,readFile,stat,writeFile} from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {createWorkspaceService,validateWorkspace} from '../lib/workspace.mjs';
+import {createMemoryWorkspaceStore,createFileWorkspaceStore} from '../lib/workspace-store.mjs';
+import {createModelProvider} from '../lib/model-provider.mjs';
+import {createCompanionServer} from '../server.mjs';
+const service=()=>createWorkspaceService(createMemoryWorkspaceStore());
+const create=(s,name='Fictional recording')=>s.run('workspace_create',{name,purpose:'Finish an original recording',outcome:'A reviewed release brief'});
+
+test('complete project journey persists across new server-store instances and preserves provenance',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-private-'));const filename=path.join(dir,'private','workspace.json');
+ try{
+  let s=createWorkspaceService(createFileWorkspaceStore(filename));const {project}=await create(s);const id=project.id;
+  await s.run('workspace_add_source',{project_id:id,title:'Creator rights source',url:'https://example.org/rights',excerpt:'Creator-supplied excerpt',creatorCheckedOn:'Creator checked today'});
+  await s.run('workspace_add_note',{project_id:id,text:'Ask which agreement is appropriate.'});
+  let task=(await s.run('workspace_add_task',{project_id:id,title:'Prepare agreement questions',nextAction:'Draft three questions'})).project.tasks[0];
+  await s.run('workspace_update_task',{project_id:id,task_id:task.id,status:'blocked',blocker:'Awaiting scope clarification',nextAction:'Ask the creator to confirm the intended use'});
+  s=createWorkspaceService(createFileWorkspaceStore(filename));const resumed=await s.run('workspace_get',{project_id:id});
+  assert.equal(resumed.project.sources[0].checkState,'linked');assert.equal(resumed.project.sources[0].checkedAt,null);
+  assert.equal(resumed.project.notes[0].kind,'creator-statement');assert.equal(resumed.resume.blocked[0].blocker,'Awaiting scope clarification');assert.match(resumed.resume.nextAction,/intended use/);
+  const handoff=await s.run('workspace_prepare_handoff',{project_id:id});assert.match(handoff.handoff,/Prepare agreement questions/);assert.match(handoff.handoff,/not fetched/);assert.match(handoff.handoff,/unresolved|Unresolved/);
+  await s.run('workspace_save_handoff',{project_id:id,text:handoff.handoff+'\nCreator-edited review note.'});
+  const backup=(await s.run('workspace_export',{project_id:id})).backup;
+  await s.run('workspace_clear',{confirmation:'DELETE ALL SAVED PROJECTS'});
+  await s.run('workspace_import',{backup_json:JSON.stringify(backup)});
+  const restored=await s.run('workspace_get',{project_id:id});assert.equal(restored.project.id,id);assert.match(restored.project.handoff,/Creator-edited/);assert.equal(restored.project.tasks[0].id,task.id);
+  assert.equal((await stat(filename)).mode&0o777,0o600);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+test('project/task boundaries, archiving and completion evidence are enforced transactionally',async()=>{
+ const s=service();const a=(await create(s,'Project A')).project;const b=(await create(s,'Project B')).project;
+ const task=(await s.run('workspace_add_task',{project_id:a.id,title:'A only'})).project.tasks[0];
+ await assert.rejects(s.run('workspace_update_task',{project_id:b.id,task_id:task.id,status:'active'}),/does not belong/);
+ assert.equal((await s.run('workspace_get',{project_id:b.id})).project.tasks.length,0);
+ await assert.rejects(s.run('workspace_update_task',{project_id:a.id,task_id:task.id,status:'done'}),/evidence/);
+ assert.equal((await s.run('workspace_get',{project_id:a.id})).project.tasks[0].status,'todo');
+ await s.run('workspace_update_task',{project_id:a.id,task_id:task.id,status:'done',completionEvidence:'Creator reviewed the draft.'});
+ await s.run('workspace_update',{project_id:a.id,archived:true});await assert.rejects(s.run('workspace_add_note',{project_id:a.id,text:'not saved'}),/archived/);
+ await s.run('workspace_update',{project_id:a.id,archived:false});await s.run('workspace_add_note',{project_id:a.id,text:'Restored work'});
+ assert.equal((await s.run('workspace_get',{project_id:a.id})).project.notes.length,1);
+});
+test('restore is validated atomically and never silently overwrites existing identities',async()=>{
+ const s=service();const p=(await create(s)).project;const backup=(await s.run('workspace_export',{})).backup;
+ await assert.rejects(s.run('workspace_import',{backup_json:JSON.stringify(backup)}),/already exists/);
+ assert.equal((await s.run('workspace_list',{})).projects.length,1);
+ const restored=await s.run('workspace_import',{backup_json:JSON.stringify(backup),strategy:'copy-conflicts'});assert.notEqual(restored.restoredIds[0],p.id);
+ const bad=structuredClone(backup);bad.projects[0].token='private';await assert.rejects(s.run('workspace_import',{backup_json:JSON.stringify(bad)}),/Unsupported saved fields/);
+ const broken=structuredClone(backup);broken.projects[0].sources=[{id:crypto.randomUUID(),url:'javascript:alert(1)'}];assert.throws(()=>validateWorkspace(broken));
+ assert.equal((await s.run('workspace_list',{})).projects.length,2);
+ await assert.rejects(s.run('workspace_delete',{project_id:p.id,confirmation:crypto.randomUUID()}),/exact project/);
+});
+test('corrupt storage is preserved and failed saves are never acknowledged as success',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-corrupt-'));const file=path.join(dir,'workspace.json');await writeFile(file,'not JSON');
+ try{const s=createWorkspaceService(createFileWorkspaceStore(file));await assert.rejects(create(s),/preserved/);assert.equal(await readFile(file,'utf8'),'not JSON');}finally{await rm(dir,{recursive:true,force:true});}
+});
+test('model absence and research failure remain recoverable; no fake reply or verification',async()=>{
+ const s=createWorkspaceService(createMemoryWorkspaceStore(),{fetcher:async()=>{throw Error('offline')}});const p=(await create(s)).project;
+ await assert.rejects(s.run('workspace_chat',{project_id:p.id,message:'What next?',consent:true}),error=>error.code==='MODEL_UNAVAILABLE');
+ assert.equal((await s.run('workspace_get',{project_id:p.id})).project.messages.length,0);
+ const added=await s.run('workspace_add_source',{project_id:p.id,title:'Public file',url:'https://github.com/Loptr-Lab/training/blob/main/README.md'});
+ const checked=await s.run('workspace_check_source',{project_id:p.id,source_id:added.project.sources[0].id});assert.equal(checked.source.checkState,'failed');assert.equal(checked.source.checkedAt,null);assert.match(checked.source.lastError,/offline/);
+ assert.equal((await s.run('workspace_get',{project_id:p.id})).project.sources.length,1);
+});
+test('external model receives only selected context, credentials stay server-side and no action executes',async()=>{
+ const calls=[];const provider=createModelProvider({url:'https://model.example.invalid/v1/chat/completions',key:'fixture-server-key',model:'fixture',fetcher:async(url,options)=>{calls.push(options);return Response.json({choices:[{message:{content:'AI suggestion: prepare three agreement questions. Not legal advice.'}}]});}});
+ const s=createWorkspaceService(createMemoryWorkspaceStore(),{model:provider});const a=(await create(s,'Selected project')).project;await create(s,'Other private project');
+ await assert.rejects(s.run('workspace_chat',{project_id:a.id,message:'Help',consent:false}),/Confirm/);
+ const reply=await s.run('workspace_chat',{project_id:a.id,message:'Help me prepare questions.',consent:true});assert.equal(reply.project.messages[1].kind,'ai-suggestion');assert.equal(reply.project.tasks.length,0);
+ assert.equal(calls.length,1);assert.doesNotMatch(calls[0].body,/Other private project/);assert.match(calls[0].body,/Selected project/);
+ assert.doesNotMatch(JSON.stringify((await s.run('workspace_export',{})).backup),/fixture-server-key/);
+});
+test('machine bearer alone cannot read or write anyone’s workspace',async()=>{
+ const store=createMemoryWorkspaceStore();const token='fixture-only-'.repeat(4);const server=createCompanionServer({token,workspaceStore:store,modelProvider:null});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
+ const post=(url,value,headers={})=>fetch(origin+url,{method:'POST',headers:{'content-type':'application/json',...headers},body:JSON.stringify(value)});
+ try{
+  assert.equal((await post('/api/workspace',{name:'workspace_list',args:{}},{'oai-authenticated-user-id':'spoof'})).status,401);
+  assert.equal((await post('/api/workspace',{name:'workspace_create',args:{name:'Rejected browser bearer'}},{Authorization:'Bearer '+token})).status,401);
+  const made=await post('/mcp',{jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_create',arguments:{name:'Shared saved project'}}},{Authorization:'Bearer '+token});assert.equal(made.status,200);assert.equal((await made.json()).result?.structuredContent?.project,undefined);
+  const rpc={jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_get',arguments:{project_id:'no-machine-grant'}}};
+  assert.equal((await post('/mcp',rpc,{'oai-authenticated-user-id':'spoof'})).status,401);
+  const fromMcp=await(await post('/mcp',rpc,{Authorization:'Bearer '+token})).json();assert.equal(fromMcp.result?.structuredContent?.project,undefined);
+  assert.equal((await post('/api/workspace',{name:'workspace_list',args:{}},{Authorization:'Bearer '+token,Origin:'https://evil.invalid'})).status,403);
+  const publicCall=await post('/api/companion',{name:'workspace_list',args:{}});assert.notEqual(publicCall.status,200);
+  assert.doesNotMatch(await(await fetch(origin+'/health')).text(),new RegExp(token));
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
+
+test('independent file adapters serialize overlapping writes to the same workspace',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-overlap-'));try{
+  const filename=path.join(dir,'workspace.json');let enter;const entered=new Promise(resolve=>enter=resolve);
+  const first=createFileWorkspaceStore(filename),second=createFileWorkspaceStore(filename);
+  const delayed={transaction:fn=>first.transaction(async state=>{enter();await new Promise(r=>setTimeout(r,50));return fn(state);})};
+  const pending=createWorkspaceService(delayed).run('workspace_create',{name:'First acknowledged project'});await entered;
+  await Promise.all([pending,createWorkspaceService(second).run('workspace_create',{name:'Second acknowledged project'})]);
+  const final=await createWorkspaceService(first).run('workspace_list',{});assert.equal(final.projects.length,2);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+test('DID workspace storage refuses symlink namespaces and preserves an interrupted writer lock',async()=>{
+ const {mkdir,symlink,access}=await import('node:fs/promises');const {createDidWorkspaceResolver}=await import('../lib/workspace-store.mjs');
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-containment-'));try{
+  await mkdir(path.join(dir,'private'));await mkdir(path.join(dir,'outside'));await symlink(path.join(dir,'outside'),path.join(dir,'private/users'));
+  const resolve=createDidWorkspaceResolver(path.join(dir,'private/workspace.json'));
+  await assert.rejects(createWorkspaceService(resolve('did:plc:aaaaaaaaaaaaaaaaaaaaaaaa')).run('workspace_create',{name:'Not outside the root'}),/symbolic-link/);
+  const filename=path.join(dir,'private/locked.json');await writeFile(filename+'.lock','synthetic interrupted writer');
+  await assert.rejects(createWorkspaceService(createFileWorkspaceStore(filename)).run('workspace_create',{name:'Not falsely saved'}),/storage is busy/);await access(filename+'.lock');
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('the file guard excludes writers in a separate Node process',async()=>{
+ const {spawn}=await import('node:child_process');const {withPrivateFileLock}=await import('../lib/workspace-store.mjs');
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-process-lock-'));let child;
+ try{
+  const file=path.join(dir,'workspace.json');let held;const entered=new Promise(r=>held=r);let release;const finish=new Promise(r=>release=r);
+  const pending=withPrivateFileLock(file,async()=>{held();await finish;});await entered;
+  const source=`import {withPrivateFileLock} from ${JSON.stringify(new URL('../lib/workspace-store.mjs',import.meta.url).href)};process.send('attempt');await withPrivateFileLock(process.argv[1],async()=>process.send('entered'));`;
+  child=spawn(process.execPath,['--input-type=module','-e',source,file],{stdio:['ignore','ignore','pipe','ipc']});
+  let enteredTooEarly=false,released=false;
+  const done=new Promise((resolve,reject)=>{child.on('message',message=>{if(message==='entered'&&!released)enteredTooEarly=true;if(message==='attempt')setTimeout(()=>{released=true;release();},50);});child.on('error',reject);child.on('exit',code=>code===0?resolve():reject(Error('Child file guard failed: '+code)));});
+  await done;await pending;assert.equal(enteredTooEarly,false);
+ }finally{child?.kill();await rm(dir,{recursive:true,force:true});}
+});
+
+test('source checks bound streamed bytes, cancel oversized bodies and preserve prior evidence on failure',async()=>{
+ let mode='success',cancelled=0,reads=0,calls=0;
+ const fetcher=async(url,options)=>{
+  calls++;assert.equal(new URL(url).origin,'https://api.github.com');assert.equal(options.redirect,'manual');assert.ok(options.signal instanceof AbortSignal);
+  if(mode==='success')return new Response('Original source text');
+  if(mode==='abort')return new Response(new ReadableStream({start(c){c.error(new DOMException('Synthetic source request aborted','AbortError'));}}));
+  if(mode==='redirect')return new Response(null,{status:302,headers:{location:'http://127.0.0.1/private'}});
+  return new Response(new ReadableStream({pull(c){reads++;c.enqueue(new Uint8Array(100001));},cancel(){cancelled++;}}),{headers:mode==='declared'?{'content-length':'200001'}:{}});
+ };
+ const s=createWorkspaceService(createMemoryWorkspaceStore(),{fetcher});let p=(await create(s)).project;
+ p=(await s.run('workspace_add_source',{project_id:p.id,title:'Source title',url:'https://github.com/Loptr-Lab/training/blob/main/README.md',excerpt:'Creator supplied text'})).project;
+ const args={project_id:p.id,source_id:p.sources[0].id};const first=await s.run('workspace_check_source',args);assert.equal(first.ok,true);assert.equal(first.source.excerpt,'Original source text');const at=first.source.checkedAt;
+ for(mode of ['stream','declared','abort','redirect']){
+  const before=cancelled,result=await s.run('workspace_check_source',args);assert.equal(result.ok,false,mode);assert.equal(result.source.checkState,'failed');assert.equal(result.source.excerpt,'Original source text');assert.equal(result.source.checkedAt,at);assert.equal(result.source.url,p.sources[0].url);assert.equal(result.source.title,'Source title');assert.match(result.notice,/failed.*retained/i);
+  if(mode==='stream'||mode==='declared')assert.equal(cancelled,before+1);
+ }
+ assert.ok(reads<=4,'oversized streams stop early rather than consuming indefinitely');
+ const before=calls;const unsupported=(await s.run('workspace_add_source',{project_id:p.id,title:'Not a fetch target',url:'https://127.0.0.1/private'})).project;
+ assert.equal((await s.run('workspace_check_source',{project_id:p.id,source_id:unsupported.sources.at(-1).id})).ok,false);assert.equal(calls,before,'user URL cannot become a private-network request');
+ mode='success';assert.equal((await s.run('workspace_check_source',args)).ok,true,'retry succeeds without replacing project');
+});
+
+test('HTTP and MCP report the same saved source failure rather than claiming a successful check',async()=>{
+ const {handleRpc}=await import('../lib/companion.mjs');const store=createMemoryWorkspaceStore();
+ const fetcher=async()=>new Response('Unavailable',{status:503});const shared=createWorkspaceService(store,{fetcher});
+ let p=(await create(shared)).project;p=(await shared.run('workspace_add_source',{project_id:p.id,title:'Recoverable source',url:'https://github.com/Loptr-Lab/training/blob/main/README.md',excerpt:'Keep this original excerpt'})).project;
+ const args={project_id:p.id,source_id:p.sources[0].id};const server=createCompanionServer({workspaceStore:store,allowLocalOwner:true,identityConfig:null,modelProvider:null,fetcher});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ try{
+  const http=await(await fetch('http://127.0.0.1:'+server.address().port+'/api/workspace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'workspace_check_source',args})})).json();assert.equal(http.ok,false);assert.equal(http.source.checkState,'failed');
+  const result=await handleRpc({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'workspace_check_source',arguments:args}},true,fetcher,{workspace:shared});
+  assert.equal(result.body.result.isError,true);const data=result.body.result.structuredContent;assert.equal(data.ok,false);assert.deepEqual(data.source,http.source);assert.match(result.body.result.content[0].text,/Source check failed/);
+  assert.deepEqual((await shared.run('workspace_get',{project_id:p.id})).project.sources,[data.source]);assert.equal(data.source.excerpt,'Keep this original excerpt');
+ }finally{await new Promise(r=>server.close(r));}
+});

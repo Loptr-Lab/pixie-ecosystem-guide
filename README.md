@@ -1,3 +1,17 @@
+## Current owner direction — 27 October 2026
+
+The one canonical Companion application runtime is the existing Railway service:
+https://pixie-project-companion-production.up.railway.app/.
+This repository's public guide is navigation, and ChatGPT is a client integration.
+The old ChatGPT Site is a temporary migration source to retire after accepted
+replacement/data/client verification and explicit approval, not a permanent
+second writable Companion. Prepared navigation routes to Railway. Existing
+source identities, OAuth callbacks and installed endpoints are preserved while
+migration dependencies remain unresolved. Where dated hosting/DNS/source claims below differ, this direction supersedes
+them. Existing build and contribution instructions remain applicable. No DNS or
+hosting change is authorized here. Follow the existing
+[canonical cutover inventory](apps/companion/deployment/RAILWAY.md).
+
 # PIXIE Ecosystem Guide
 
 This is a plain-language, out-of-world guide to PIXIE’s place across Loptr Lab. It explains how a deliberately transmedia story can be discovered across separate media, while the studio’s repositories also contain genuinely separate stories, planning documents, prototypes, and code references at different stages. The guide maps those pieces; it does not connect them into one service or declare every link part of one fictional continuity.
@@ -43,3 +57,13 @@ Use this existing GitHub repository as PIXIE’s public guide/front door. Keep t
 working Project Companion Site and plugin identity in place during acceptance.
 See [HOSTING-AND-DNS.md](HOSTING-AND-DNS.md) for the exact DNS record, verified
 deployment blocker and separation between source development and server hosting.
+
+## Companion application source review
+
+The owner selected this existing repository as the preferred source home for a
+separate Companion module, subject to preserving this guide. The recovered,
+independently runnable application is under [apps/companion](apps/companion/README.md).
+Its build, tests and Node/MCP runner are independent of the root guide build.
+This source review does not deploy the module, migrate the existing Site/plugin,
+change domains or establish mirror synchronization. Follow the module's explicit
+acceptance and Site-retirement gates; the guide's existing functionality remains.

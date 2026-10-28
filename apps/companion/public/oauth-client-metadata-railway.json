@@ -1,0 +1,19 @@
+{
+  "client_id": "https://pixie-project-companion-production.up.railway.app/oauth-client-metadata-railway.json",
+  "client_name": "PIXIE Project Companion",
+  "client_uri": "https://pixie-project-companion-production.up.railway.app/",
+  "redirect_uris": [
+    "https://pixie-project-companion-production.up.railway.app/"
+  ],
+  "scope": "atproto",
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "application_type": "web",
+  "dpop_bound_access_tokens": true
+}
