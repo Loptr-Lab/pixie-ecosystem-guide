@@ -112,3 +112,6 @@ body{font-size:var(--pixie-font-size,18px)}
 .pixie-bubble button,.pixie-bubble summary,.pixie-bubble a{min-height:48px}
 .pixie-bubble summary{cursor:pointer;align-content:center}
 .pixie-doors a{display:inline-block;align-content:center}
+
+/* Override the legacy global 12px !important note rule only inside this menu. */
+.pixie-bubble .note{font-size:1em!important}
