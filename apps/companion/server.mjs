@@ -1,5 +1,6 @@
 // Independent runner for the recovered Companion, not a replacement Site identity.
 import http from 'node:http';
+import {weaverRoutes} from './lib/weaver-routes.mjs';
 import {readFile,stat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -23,7 +24,7 @@ async function body(request){
  for await(const chunk of request){length+=chunk.length;if(length>maximumBody)throw Object.assign(Error('Request too large'),{status:413});chunks.push(chunk);}
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
-export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,workspaceFile=process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)),modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
+export function createCompanionServer({weaverService=null,weaverProvider,root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,workspaceFile=process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)),modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
  const store=workspaceStore||createFileWorkspaceStore(workspaceFile);
  const model=modelProvider===undefined?createModelProvider({url:process.env.PIXIE_MODEL_URL,key:process.env.PIXIE_MODEL_API_KEY,model:process.env.PIXIE_MODEL_NAME,fetcher}):modelProvider;
  const services={workspace:createWorkspaceService(store,{model,fetcher})};
@@ -39,7 +40,7 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
     try{
      response.setHeader('Referrer-Policy','no-referrer');
      if(url.pathname==='/api/auth/session'&&request.method==='GET'){json(200,await identity.status(request,response));return;}
-     if(url.pathname==='/'&&request.method==='GET'){await identity.callback(request,response,url.searchParams);response.writeHead(303,{Location:'/#account','Cache-Control':'no-store'});response.end();return;}
+     if(url.pathname==='/'&&request.method==='GET'){const returnPath=await identity.callback(request,response,url.searchParams);response.writeHead(303,{Location:returnPath||'/#account','Cache-Control':'no-store'});response.end();return;}
      if(request.method==='POST'&&String(request.headers['content-type']||'').startsWith('application/json')){
       if(url.pathname==='/api/auth/login'){json(200,await identity.login(request));return;}
       if(url.pathname==='/api/auth/logout'){json(200,await identity.logout(request,response));return;}
@@ -47,6 +48,7 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
      json(405,{error:'Unsupported identity request.'});return;
     }catch(error){json([400,401,403,429].includes(error.status)?error.status:503,{error:[400,401,403,429].includes(error.status)?error.message:'Identity verification is unavailable. No private access was granted.'});return;}
    }
+   if(url.pathname==='/api/weaver'||url.pathname.startsWith('/api/weaver/')){await weaverRoutes({identity,service:weaverService,provider:weaverProvider})(request,response,json,body);return;}
    if(url.pathname==='/ready'){if(!readyCheck){json(503,{ready:false});return;}try{await readyCheck();json(200,{ready:true});}catch{json(503,{ready:false});}return;}
    if(url.pathname==='/health'){json(200,{service:'pixie-companion',mode:'independent',mcp:token.length>=32?'bearer-auth configured':'disabled until configured'});return;}
    if(url.pathname.startsWith('/api/workspace')){

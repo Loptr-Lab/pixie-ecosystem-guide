@@ -56,7 +56,7 @@ export function createOwnerIdentity({ownerDid,secret,file,now=Date.now,oauthFact
   const csrf=request.headers['x-pixie-csrf'],bucket=Math.floor(now()/(loginLifetime/2));
   if(!raw||![bucket,bucket-1].some(b=>equal(csrf,loginCsrf(raw,b))))throw fail(403,'Sign-in CSRF check failed.');
   const payload=await readRequestIdentity(request);
-  await store.transaction(s=>{let r=s.logins[key];if(!r){if(Object.keys(s.logins).length>=128)throw fail(429,'Too many active sign-in attempts. Try later.');r=s.logins[key]={attempts:0,expires:now()+loginLifetime};}if(r.attempts>=5)throw fail(429,'Too many sign-in attempts. Try later.');r.attempts++;});
+  await store.transaction(s=>{let r=s.logins[key];if(!r){if(Object.keys(s.logins).length>=128)throw fail(429,'Too many active sign-in attempts. Try later.');r=s.logins[key]={attempts:0,expires:now()+loginLifetime};}if(r.attempts>=5)throw fail(429,'Too many sign-in attempts. Try later.');r.attempts++;r.returnTo=payload.returnTo==='weaver'?'weaver':null;});
   const url=await(await client()).authorize(payload.handle,{state:key,scope:'atproto',prompt:'consent',signal:AbortSignal.timeout(15_000)});
   if(url.protocol!=='https:')throw fail(403,'The identity provider must use HTTPS.');
   return {url:url.href};
@@ -76,6 +76,7 @@ export function createOwnerIdentity({ownerDid,secret,file,now=Date.now,oauthFact
   const id=nonce(),record={did:result.session.did,role:result.session.did===ownerDid?'admin':'member',csrf:nonce(),expires:now()+lifetime};
   await store.transaction(s=>{const prior=cookie(request,cookieName);if(prior)delete s.browsers[hash(prior)];if(Object.keys(s.browsers).length>=256)throw fail(429,'Session capacity reached.');s.browsers[hash(id)]=record;});
   response.setHeader('Set-Cookie',[setCookie(cookieName,id,lifetime/1000),setCookie(loginCookie,'',0)]);
+  return pending.returnTo==='weaver'?'/?weaver=1#weaver':'/#account';
  }
  async function logout(request,response){
   sameOrigin(request);const id=cookie(request,cookieName),record=id?await store.transaction(s=>s.browsers[hash(id)]):null;

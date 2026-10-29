@@ -1,5 +1,7 @@
 // Launch the existing server with a verified persistent-data boundary. No provisioning.
 import path from 'node:path';
+import {weaverStore} from '../lib/weaver-store.mjs';
+import {createWeaverService} from '../lib/weaver-policy.mjs';
 import {fileURLToPath} from 'node:url';
 import {mkdir,stat,realpath,open,unlink} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
@@ -26,15 +28,18 @@ export async function startProduction(env=process.env,{oauthFactory}={}){
  const store=createFileWorkspaceStore(config.file);
  const identityConfig=ownerIdentityConfiguration(env);
  const identity=identityConfig?createOwnerIdentity({...identityConfig,oauthFactory}):null;
+ const weaverRecords=env.PIXIE_WEAVER_RECIPIENT_DID&&identityConfig?weaverStore(path.join(path.dirname(config.file),'weaver.enc'),identityConfig.secret):null;
+ const weaverService=weaverRecords?createWeaverService({store:weaverRecords,recipientDid:env.PIXIE_WEAVER_RECIPIENT_DID}):null;
  const readyCheck=async()=>{
   await store.transaction(async state=>({result:true,write:false,state}));
   await identity?.ready();
+  await weaverRecords?.ready();
   const probe=path.join(actualParent,'.ready-'+randomUUID());let handle;
   try{handle=await open(probe,'wx',0o600);await handle.sync();}
   finally{if(handle){await handle.close();await unlink(probe);}}
  };
  await readyCheck();
- const server=createCompanionServer({token:config.token,workspaceStore:store,workspaceFile:config.file,allowLocalOwner:false,readyCheck,identity,identityConfig:null});
+ const server=createCompanionServer({token:config.token,workspaceStore:store,workspaceFile:config.file,allowLocalOwner:false,readyCheck,identity,weaverService,identityConfig:null});
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(config.port,config.host,resolve);});
  return server;
 }

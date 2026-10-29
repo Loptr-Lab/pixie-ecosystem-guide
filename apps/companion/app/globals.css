@@ -115,3 +115,5 @@ body{font-size:var(--pixie-font-size,18px)}
 
 /* Override the legacy global 12px !important note rule only inside this menu. */
 .pixie-bubble .note{font-size:1em!important}
+
+.weaver-exact-text {white-space:pre-wrap;overflow-wrap:anywhere;}
