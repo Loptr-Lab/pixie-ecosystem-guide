@@ -1,3 +1,5 @@
+Read [brand-guidelines.md](brand-guidelines.md) before changing brand, copy, images or presentation. Reuse the accepted Companion sigil and existing shared CSS; do not invent replacements.
+
 ## Current owner direction — 27 October 2026
 
 The one canonical Companion application runtime is the existing Railway service:

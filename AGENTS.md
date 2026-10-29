@@ -1,3 +1,5 @@
+Read [brand-guidelines.md](brand-guidelines.md) before changing brand, copy, images or presentation. Reuse the accepted Companion sigil and existing shared CSS; do not invent replacements.
+
 # PIXIE Companion — binding development instructions
 
 Applies to this repository's `apps/companion` changes. Read these before editing.
