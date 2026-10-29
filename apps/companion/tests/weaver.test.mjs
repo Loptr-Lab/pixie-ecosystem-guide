@@ -48,3 +48,18 @@ test('Weaver handoff returns to its allowlisted view after the same OAuth login'
  const callback=await fetch(base+'/?state='+state+'&code=stranger&iss=https%3A%2F%2Fidentity.example.test',{headers:{Host:host,Cookie:jar.header()}});assert.equal(callback.status,303);assert.equal(callback.headers.get('Location'),'/?weaver=1#weaver');
  }finally{if(server)await new Promise(r=>server.close(r));await rm(dir,{recursive:true,force:true})}
 });
+
+test('saved receipts survive withdrawal/deletion and refuse mismatched private records',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-weaver-recovery-'));try{
+ const store=weaverStore(path.join(dir,'weaver.enc'),secret),service=createWeaverService({store,ownerDid:owner,recipientDid:stranger});
+ await store.transaction(s=>{s.invitations[stranger]=invitation();return{write:true}});
+ const saved=await service.accept(stranger,acceptance);
+ await store.transaction(s=>{delete s.invitations[stranger];return{write:true}});
+ assert.deepEqual(await service.savedReceipt(stranger,'test-invitation','v1'),saved);
+ assert.ok(!JSON.stringify(saved).includes('test-private-reference'));
+ await assert.rejects(service.savedReceipt(owner,'test-invitation','v1'));
+ await assert.rejects(service.savedReceipt(stranger,'test-invitation','v2'),/receipt_not_found/);
+ await store.transaction(s=>{Object.values(s.acceptances)[0].recipientDid=owner;return{write:true}});
+ await assert.rejects(service.savedReceipt(stranger,'test-invitation','v1'),/receipt_not_found/);
+ }finally{await rm(dir,{recursive:true,force:true})}
+});

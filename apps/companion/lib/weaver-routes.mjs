@@ -14,12 +14,13 @@ export function weaverRoutes({identity,service,provider=providers()}){
    const url=new URL(request.url,'http://localhost');
    if(request.headers.origin&&request.headers.origin!=='https://pixie-project-companion-production.up.railway.app')throw Object.assign(Error('Invalid Weaver origin.'),{statusCode:403});
    if(request.method==='POST'){identity.csrf(request,principal);if(!(String(request.headers['content-type']||'').split(';')[0].trim()==='application/json')){json(415,{error:'Use JSON.'});return;}}
+   if(url.pathname==='/api/weaver/receipt'&&request.method==='GET'){json(200,{receipt:await service.savedReceipt(principal.did,url.searchParams.get('invitationId'),url.searchParams.get('version'))});return;}
    if(await provider.ownerAuthorized()!==true){json(409,{error:'Owner authorization remains pending.'});return;}
    if(url.pathname==='/api/weaver/owner'&&request.method==='POST'){json(200,await service.ownerStatus(principal.did));return;}
    if(url.pathname==='/api/weaver'&&request.method==='GET'){const view=await service.review(principal.did);json(200,{...view,csrf:principal.csrf,germEligible:view.receipt?!!(await provider.germ(principal.did)):false});return;}
    if(url.pathname==='/api/weaver/accept'&&request.method==='POST'){json(200,{receipt:await service.accept(principal.did,await readBody(request))});return;}
    if(url.pathname==='/api/weaver/germ'&&request.method==='POST'){const view=await service.review(principal.did);if(!view.receipt){json(409,{error:'acceptance_required'});return;}const link=await provider.germ(principal.did);json(link?200:409,link?{url:link,acceptanceUnchanged:true}:{error:'germ_handoff_unavailable',acceptanceUnchanged:true});return;}
    json(404,{error:'Not found'});
-  }catch(e){const code=e.statusCode||e.status;json([400,401,403,404,409].includes(code)?code:503,{error:[400,401,403,404,409].includes(code)?e.message:'Private verification or storage unavailable. No new save is confirmed.',support:supportDraft(e.message)});}
+  }catch(e){const code=e.statusCode||e.status;const known=new Set(['invitation_not_found','invitation_account_mismatch','issued_invitation_required','invitation_review_pending','invitation_approval_pending','named_person_verification_pending','confirmed_identity_mismatch','invitation_version_changed','owner_access_forbidden','invalid_receipt_reference','receipt_not_found','explicit_acceptance_required','Invalid Weaver origin.','Session or CSRF check failed.']);const safe=known.has(e.message)&&[400,401,403,404,409].includes(code);json(safe?code:503,{error:safe?e.message:'Private verification or storage unavailable. No new save is confirmed.',support:supportDraft(e.message)});}
  };
 }
