@@ -1,4 +1,5 @@
 const guides={
+ weaver:{title:'Review your existing invitation',body:'Weaver is a project-specific invitation-only pathway. Sign in once with your existing Atmosphere identity, review the exact invitation and choose explicitly whether to accept discussion. Verification is not consent. No unsolicited request or public participant record is created.',action:'Return to invitation review'},
  coordinate:{title:'Join and keep the thread',body:'Prepare a public GitHub checkpoint, review it, and submit it in your chosen project.',action:'Prepare a checkpoint'},
  checkpoint:{title:'Resume across sessions',body:'Bring the GitHub issue URL. I can read the shared record without your earlier chat.',action:'Read a checkpoint'},
  resume:{title:'Find your place',body:'I can help you separate the last reviewed status from what still needs checking.',action:'Show project status'},
