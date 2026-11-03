@@ -44,6 +44,26 @@ jobs:
         run: corepack pnpm run build
       - name: Confirm generated entrypoint
         run: test -s tangled-site/index.html
+      # Reuse the two reviewed journeys against a fixed Creator OS source tree.
+      - name: Check out reviewed Creator OS browser fixture
+        uses: actions/checkout@v4
+        with:
+          repository: ibloud/pixie-creator-os
+          ref: 9358a26f97f6012e3107dd61ae96075ea1889569
+          path: .ci-creator
+          persist-credentials: false
+      - name: Prepare existing browser test runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/pixie-browser" --no-save --package-lock=false --ignore-scripts playwright@1.62.1
+          node "$RUNNER_TEMP/pixie-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          echo "PIXIE_PLAYWRIGHT_MODULE=$RUNNER_TEMP/pixie-browser/node_modules/playwright" >> "$GITHUB_ENV"
+          echo "PIXIE_CHROMIUM=$(node -e 'console.log(require(process.argv[1]).chromium.executablePath())' "$RUNNER_TEMP/pixie-browser/node_modules/playwright")" >> "$GITHUB_ENV"
+      - name: Verify private workspace and helper browser journey
+        run: node tests/browser-owner.cjs
+      - name: Verify paired Creator OS browser journey
+        env:
+          PIXIE_CREATOR_ROOT: ${{ github.workspace }}/.ci-creator
+        run: node tests/browser-creator.cjs
 
   existing-guide:
     name: Preserve existing guide
