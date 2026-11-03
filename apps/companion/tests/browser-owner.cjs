@@ -15,11 +15,15 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),os=req
  const browser=await chromium.launch({headless:true,executablePath:process.env.PIXIE_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox']});
  const mount=async storageState=>{const context=await browser.newContext({viewport:{width:820,height:1180},hasTouch:true,storageState});await context.route('**/*',async route=>{
   const request=route.request(),url=new URL(request.url());
-  if(url.origin==='https://identity.example.test')return route.fulfill({status:303,headers:{Location:origin+'/?state='+url.searchParams.get('state')+'&code='+(url.searchParams.get('login_hint')==='stranger.test'?'stranger':'owner')+'&iss='+encodeURIComponent('https://identity.example.test')}});
+  if(url.origin==='https://identity.example.test'){const callback=origin+'/?state='+url.searchParams.get('state')+'&code='+(url.searchParams.get('login_hint')==='stranger.test'?'stranger':'owner')+'&iss='+encodeURIComponent('https://identity.example.test');return route.fulfill({contentType:'text/html',body:'<!doctype html><script>location.replace('+JSON.stringify(callback)+')</script>'});}
   if(url.origin!==origin)return route.fulfill({contentType:'application/json',body:'{}',headers:{'access-control-allow-origin':'*'}});
   const headers={...request.headers(),Host:host};delete headers['host'];
   const response=await fixtureFetch(base+url.pathname+url.search,{method:request.method(),headers,body:request.postData()||undefined});
   const outgoing=Object.fromEntries(response.headers);if(response.headers.getSetCookie().length)outgoing['set-cookie']=response.headers.getSetCookie().join('\n');
+  // Match the paired Creator fixture: fulfilled HTTP redirects can leave the
+  // route on newer Chromium. Assert the real server redirect/cookie response,
+  // then navigate within this synthetic boundary without contacting production.
+  if(response.status===303){assert.equal(response.headers.get('location'),'/#account');delete outgoing.location;outgoing['content-type']='text/html';return route.fulfill({status:200,headers:outgoing,body:'<!doctype html><script>location.replace('+JSON.stringify(origin+'/#account')+')</script>'});}
   await route.fulfill({status:response.status,headers:outgoing,body:Buffer.from(await response.arrayBuffer())});
  });return context;};
  let context;
