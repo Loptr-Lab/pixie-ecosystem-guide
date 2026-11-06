@@ -7,6 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "dev": "node server.mjs",
     "start": "node server.mjs",
     "build": "node scripts/build.mjs",
     "check": "node --check server.mjs && node --check scripts/build.mjs && node --check src/data.js && node --check src/app.js && node --check tests/check.mjs && node tests/check.mjs"
