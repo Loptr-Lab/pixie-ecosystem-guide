@@ -3,7 +3,7 @@ import http from 'node:http';
 import {readFile,stat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {timingSafeEqual} from 'node:crypto';
+import {readMcpClientHashes,identifyMcpClient} from './lib/mcp-client-access.mjs';
 import {createWorkspaceService} from './lib/workspace.mjs';
 import {createFileWorkspaceStore,createDidWorkspaceResolver} from './lib/workspace-store.mjs';
 import {createModelProvider} from './lib/model-provider.mjs';
@@ -13,17 +13,13 @@ import {createOwnerIdentity,ownerIdentityConfiguration} from './lib/owner-identi
 
 const defaultRoot=fileURLToPath(new URL('./tangled-site/',import.meta.url));
 const maximumBody=2_100_000;
-function authorized(header,token){
- if(!token||token.length<32||typeof header!=='string')return false;
- const expected=Buffer.from('Bearer '+token),actual=Buffer.from(header);
- return expected.length===actual.length&&timingSafeEqual(expected,actual);
-}
 async function body(request){
  let length=0;const chunks=[];
  for await(const chunk of request){length+=chunk.length;if(length>maximumBody)throw Object.assign(Error('Request too large'),{status:413});chunks.push(chunk);}
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
-export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,workspaceFile=process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)),modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
+export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',mcpClientHashes=process.env.PIXIE_MCP_CLIENT_TOKEN_HASHES||'',fetcher=serverFetch,workspaceStore,workspaceFile=process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)),modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
+ const clients=readMcpClientHashes(mcpClientHashes,token);
  const store=workspaceStore||createFileWorkspaceStore(workspaceFile);
  const model=modelProvider===undefined?createModelProvider({url:process.env.PIXIE_MODEL_URL,key:process.env.PIXIE_MODEL_API_KEY,model:process.env.PIXIE_MODEL_NAME,fetcher}):modelProvider;
  const services={workspace:createWorkspaceService(store,{model,fetcher})};
@@ -73,10 +69,18 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
     }
     // Never trust Sites identity headers on an independent public server.
     if(token.length<32){json(503,{error:'Independent MCP authentication is not configured.'});return;}
-    if(!authorized(request.headers.authorization,token)){json(401,{error:'Bearer authentication required.'});return;}
+    const principal=identifyMcpClient(request.headers.authorization,token,clients);
+    if(!principal){json(401,{error:'Bearer authentication required.'});return;}
+    const rpc=await body(request);
+    // New client grants reuse the existing public operations only. Never pass a
+    // DID, browser session, private service or owner credential into this route.
+    if(principal.kind==='public-client'&&rpc?.jsonrpc==='2.0'&&rpc.id!==undefined&&rpc.method==='tools/call'&&String(rpc.params?.name||'').startsWith('workspace_')){
+     json(200,{jsonrpc:'2.0',id:rpc.id??null,result:{content:[{type:'text',text:'This connection supports public project and draft tools only.'}],isError:true}});return;
+    }
     // Machine credentials never imply a browser user's project identity.
     // Do not give a global workspace to an unscoped bearer token.
-    const result=await handleRpc(await body(request),true,fetcher,{workspace:{run:async()=>{throw Error('Machine workspace access requires an explicit principal grant.');}}});
+    const result=await handleRpc(rpc,true,fetcher,{workspace:{run:async()=>{throw Error('Machine workspace access requires an explicit principal grant.');}}});
+    if(principal.kind==='public-client'&&rpc?.method==='tools/list'&&Array.isArray(result.body?.result?.tools))result.body.result.tools=result.body.result.tools.filter(tool=>!tool.name.startsWith('workspace_'));
     if(result.body===null){response.writeHead(result.status);response.end();}else json(result.status,result.body);
     return;
    }

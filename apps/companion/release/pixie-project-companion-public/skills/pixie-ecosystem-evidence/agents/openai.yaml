@@ -1,0 +1,5 @@
+interface:
+  display_name: "PIXIE Ecosystem Evidence"
+  short_description: "Check sources before recreating ecosystem work"
+  default_prompt: "Assess PIXIE ecosystem evidence and distinguish duplication, retrieval gaps, and confirmed loss."
+
