@@ -2,6 +2,12 @@
 
 This is a separate regular plugin package. It does not modify the Sites-generated private plugin, its App binding, release, OAuth or connections. No second PIXIE tool implementation or hosting service is included.
 
+## Host gate: STOP — not a working ChatGPT bearer connection
+
+Verified 7 November 2026: [ChatGPT authentication documentation](https://developers.openai.com/plugins/build/auth#client-identification) says ChatGPT cannot present custom API keys. The [submission portal](https://developers.openai.com/plugins/deploy/submission#authentication-limitations) has no API-key or bearer-token input, even though this manifest declaration is schema-valid. Do not follow the conditional provisioning instructions below for ChatGPT or deploy the grant pilot on that basis. Import success is not connection support.
+
+The existing draft PR #12 proposes reviewing an MCP OAuth amendment on the same runtime, or obtaining an explicit supported API-key exception from OpenAI. Neither is implemented or release-approved. This package remains private and blocked; no token may be embedded in headers and no protected server may be declared unauthenticated. The following original pilot instructions are historical and conditional, not a supported installation path.
+
 ## Installation status: BLOCKED for external testers
 
 The configured endpoint is the existing Railway `/mcp`, not a guessed new URL. Its current deployed authentication is a single machine bearer credential, not independently registered OAuth. No DCR/CIMD fallback, OAuth scopes, internal Site client, owner token or callback is packaged.

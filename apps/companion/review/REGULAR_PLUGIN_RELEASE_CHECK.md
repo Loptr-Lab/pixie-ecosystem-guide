@@ -2,6 +2,31 @@
 
 Prepared with Codex assistance. This is evidence for the existing release issue, not a public listing or authorization to deploy. No real tester, customer record, credentials or owner session is used in fixtures.
 
+## Follow-up host gate — bearer rollout STOPPED, 7 November 2026
+
+This finding supersedes the earlier “host support / directory eligibility unverified” status below. Existing PR #12 and its implementation are retained; no second PR, plugin identity or runtime was created.
+
+**Verified host requirement:** [OpenAI plugin authentication](https://developers.openai.com/plugins/build/auth#client-identification) says ChatGPT cannot present custom API keys. [Public submission authentication limitations](https://developers.openai.com/plugins/deploy/submission#authentication-limitations) says the connection form supports no authentication, OAuth and mixed unauthenticated/OAuth access, but has no API-key connection flow or bearer-token input. Basic/custom-header declarations are also affected. It explicitly forbids embedding a token in server headers or declaring a protected server unauthenticated. It directs API-key submissions to contact OpenAI. This is a documented standard-flow blocker, not a claim that OpenAI has permanently prohibited every exception.
+
+[Package documentation](https://developers.openai.com/plugins/build/plugins#fixed-bearer-tokens-and-api-keys) confirms that `api_key` / `bearer` is a schema declaration, not an OAuth flow. Thus private import/readback is not proof of a usable ChatGPT independent connection. No supported private bearer configuration was established, and the standard public submission connection cannot be completed with this candidate. Do not provision tester secrets or deploy the hashed-grant pilot for this ChatGPT goal.
+
+Both plugin identities were read back: regular candidate remains USER/PRIVATE v0.1.0 (`pluginrel_6aef41503ce88191b24962656b429aff`); Sites-generated plugin remains USER/PRIVATE v1.0.4 (`pluginrel_6ad52bbcd1508191ba0f9445362a797f`). No plugin release, connection, hosting configuration or infrastructure was modified. Private ChatGPT connection UI was not exercised; the conclusion about private bearer support follows the host's explicit published limitation, not a fabricated UI experiment. No independent tester installation is claimed.
+
+### Necessary amendment proposed — not implemented or authorized for release
+
+For a protected ChatGPT connection through the documented standard flow, amend only the existing Railway MCP authentication boundary to support MCP OAuth authorization-code flow with PKCE S256. Keep its dispatcher and public/draft tool restriction, existing machine bearer compatibility, browser Atmosphere identity and Sites connections. Required pieces are protected-resource metadata and 401 discovery challenges; a verified authorization server exposing discovery/authorization/token endpoints; independently registered client with the exact callback copied from the connection management page; issuer/resource-audience/expiry/scope validation; and secure authorization-code/token lifecycle and revocation. OAuth bearer access tokens are different from manually entered fixed keys.
+
+Use a predefined, independently registered OAuth client for the initial proposal; DCR/CIMD remain unavailable and must not be advertised without implementation and evidence. Do not reuse the Site internal client or AT Protocol client metadata. An OAuth integration needs actual user authentication/consent and token issuance; returning a static key from a token endpoint or renaming the manifest is insufficient. No provider, callback, scope, credentials, storage design, new service or infrastructure is selected or invented here. Existing browser AT Protocol OAuth is not an MCP authorization server.
+
+**Next owner decision:** authorize scoping this OAuth amendment within PR #12 on the existing Railway runtime, or seek explicit OpenAI confirmation of a supported API-key exception before any bearer work resumes. Recommendation: review the OAuth amendment. Approval to scope is not approval to implement an unreviewed security design, deploy, merge or publish. Identify an existing owner-controlled issuer (if any) and verify its actual client-registration, callback and resource-token capabilities before choosing integration details. If none is available, present the minimum same-service authorization-server design for review; no new host/provider is authorized.
+
+### Current release disposition and evidence
+
+- STOPPED at the host gate per owner instruction. No production rollout plan or credential provisioning was executed; the conditional full hashed-grant security review and backup/rollback rehearsal did not proceed. Local tests are not a security approval. The optional grant code remains undeployed in draft PR #12, not accepted as the ChatGPT authentication solution.
+- Historical candidate SHA `aad0792565075ecda4cb2a386bdb2d50035d95f2`: 88 local tests, typecheck/build pass; [GitHub run 42386417776](https://github.com/Loptr-Lab/pixie-ecosystem-guide/actions/runs/42386417776) passed Companion and guide checks. The automatic Vercel Companion preview failed; guide preview passed. The failure is unresolved and is not a Railway production result.
+- Blockers now: supported OAuth design or explicit host exception; independent client/callback registration; reviewed authentication implementation; verified private backup/restore and reversible approved release; live protocol/security/legacy-compatibility checks; independent authorized tester installation; directory/reviewer/policy gates and owner release approval. Railway live verification remains blocked by the previously recorded executor proxy restriction.
+- Documentation-only follow-up: no runtime, package authentication declaration, plugin release, secret or dependency changed. The earlier archive hash refers to the original v0.1.0 artifact, not a newly rebuilt package. The source package README now warns that this artifact cannot complete the standard ChatGPT connection.
+
 ## 1. Verified source and resource inventory
 
 | Resource | Exact observation | Limits |
