@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,unlink,symlink,rm} from 'node:fs/promises';
+import {mkdtemp,readFile,writeFile,unlink,symlink,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
@@ -79,7 +79,7 @@ test('consent browser/CSRF/origin/DID binding, cancellation and issuer errors',a
 });
 
 test('missing, wrong-key and symlink stores never reset or become ready',async t=>{
- const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-oauth-fail-'));t.after(()=>rm(dir,{recursive:true,force:true}));const file=path.join(dir,'oauth.enc'),store=createMcpOAuthStore({file,key});await assert.rejects(store.ready());await store.initialize();await assert.rejects(store.initialize());await assert.rejects(createMcpOAuthStore({file,key:'cd'.repeat(32)}).ready());await unlink(file);await assert.rejects(store.ready());await symlink(path.join(dir,'missing'),file);await assert.rejects(store.ready());
+ const dir=await mkdtemp(path.join(os.tmpdir(),'pixie-oauth-fail-'));t.after(()=>rm(dir,{recursive:true,force:true}));const file=path.join(dir,'oauth.enc'),store=createMcpOAuthStore({file,key});await assert.rejects(store.ready());await store.initialize();await assert.rejects(store.initialize());await assert.rejects(createMcpOAuthStore({file,key:'cd'.repeat(32)}).ready());await unlink(file);await assert.rejects(store.ready());await symlink(path.join(dir,'missing'),file);await assert.rejects(store.ready());await unlink(file);await writeFile(file,'{corrupt synthetic state');await assert.rejects(store.ready());assert.equal(await readFile(file,'utf8'),'{corrupt synthetic state');
 });
 
 
