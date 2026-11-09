@@ -1,3 +1,4 @@
+import {prepareStoryLedger} from './story-discovery.mjs';
 // Shared creator-workspace rules. No filesystem, browser globals or model credentials.
 export const workspaceSchema='pixie.creator-workspace/v1';
 const statuses=['todo','active','blocked','done'];
@@ -21,7 +22,7 @@ export function validateWorkspace(input){
   if(typeof p.archived!=='boolean')fail('Invalid archive state.');date(p.createdAt);date(p.updatedAt);text(p.handoff,'handoff',30000);
   for(const kind of ['sources','notes','tasks','messages','activity'])if(!Array.isArray(p[kind])||p[kind].length>300)fail('Too many '+kind+'.');
   const itemIds=new Set();
-  for(const s of p.sources){keys(s,['id','title','url','origin','excerpt','creatorCheckedOn','addedAt','checkedAt','checkState','lastError']);id(s.id);if(itemIds.has(s.id))fail('Duplicate source identity.');itemIds.add(s.id);text(s.title,'source title',300,true);publicUrl(s.url);if(!s.url)fail('Source URL required.');for(const k of ['origin','excerpt','creatorCheckedOn','lastError'])text(s[k],k,k==='excerpt'?10000:1000);date(s.addedAt);if(s.checkedAt!==null)date(s.checkedAt);if(!['linked','fetched','failed'].includes(s.checkState))fail('Invalid source evidence state.');}
+  for(const s of p.sources){keys(s,['id','title','url','origin','excerpt','creatorCheckedOn','addedAt','checkedAt','checkState','lastError','storyReference']);if('storyReference' in s)validateStoryReference(s.storyReference);id(s.id);if(itemIds.has(s.id))fail('Duplicate source identity.');itemIds.add(s.id);text(s.title,'source title',300,true);publicUrl(s.url);if(!s.url)fail('Source URL required.');for(const k of ['origin','excerpt','creatorCheckedOn','lastError'])text(s[k],k,k==='excerpt'?10000:1000);date(s.addedAt);if(s.checkedAt!==null)date(s.checkedAt);if(!['linked','fetched','failed'].includes(s.checkState))fail('Invalid source evidence state.');}
   itemIds.clear();for(const t of p.tasks){keys(t,['id','title','status','progress','blocker','nextAction','completionEvidence','updatedAt']);id(t.id);if(itemIds.has(t.id))fail('Duplicate task identity.');itemIds.add(t.id);text(t.title,'task title',500,true);if(!statuses.includes(t.status))fail('Invalid task status.');for(const k of ['progress','blocker','nextAction','completionEvidence'])text(t[k],k,4000);date(t.updatedAt);if(t.status==='done'&&!t.completionEvidence.trim())fail('Completed tasks need creator-reported evidence.');if(t.status==='blocked'&&!t.blocker.trim())fail('Record the blocker.');}
   itemIds.clear();for(const n of p.notes){keys(n,['id','text','createdAt','kind']);id(n.id);if(itemIds.has(n.id))fail('Duplicate note identity.');itemIds.add(n.id);text(n.text,'note',10000,true);date(n.createdAt);if(n.kind!=='creator-statement')fail('Invalid note origin.');}
   for(const m of p.messages){keys(m,['id','role','text','createdAt','kind']);id(m.id);date(m.createdAt);text(m.text,'message',12000,true);if(!['creator','assistant'].includes(m.role)||m.kind!==(m.role==='creator'?'creator-statement':'ai-suggestion'))fail('Invalid conversation provenance.');}
@@ -30,6 +31,45 @@ export function validateWorkspace(input){
  if(state.selectedId!==null&&!ids.has(state.selectedId))fail('Selected project is missing.');
  if(JSON.stringify(state).length>2_000_000)fail('Workspace exceeds the two-megabyte limit. Export and remove unused projects.');
  return state;
+}
+function validateStoryReference(reference){
+ keys(reference,['result','ledger']);
+ const result=reference.result;
+ if(!result||!Array.isArray(result.matches)||result.matches.length!==1)fail('Invalid story reference.');
+ keys(result,['actor','matches']);keys(result.actor,['did','handle','pds','verification','documentUrl']);
+ text(result.actor.handle,'author handle',253,true);
+ const match=result.matches[0];
+ keys(match,['authorHandle','authorDid','uri','cid','url','text','createdAt','retrievedAt','retrievalSource','endpoint','collection','reply','repost','verification','embedding']);
+ text(match.text,'original source text',10000);text(match.authorHandle,'author handle',253,true);
+ if(match.authorHandle!==result.actor.handle||typeof match.reply!=='boolean'||typeof match.repost!=='boolean')fail('Invalid source attribution.');
+ for(const field of ['retrievedAt','createdAt'])date(match[field]);
+ if(!['pds','bsky-entryway','appview'].includes(match.retrievalSource))fail('Invalid story retrieval source.');
+ if(!publicUrl(match.endpoint))fail('Missing retrieval endpoint.');text(match.verification,'verification',1000,true);
+ const expected=prepareStoryLedger(JSON.stringify(result)).ledger;
+ if(match.url!==expected.posts[0].url)fail('Source link and stable identity differ.');
+ const ledger=reference.ledger;
+ if(!ledger||ledger.schemaVersion!==2||!Array.isArray(ledger.posts)||ledger.posts.length!==1)fail('Invalid story Ledger v2.');
+ date(ledger.exportedAt);date(ledger.posts[0].selectedAt);
+ expected.exportedAt=ledger.exportedAt;expected.posts[0].selectedAt=ledger.posts[0].selectedAt;
+ if(JSON.stringify(expected)!==JSON.stringify(ledger))fail('Story ledger does not match its source evidence.');
+ if(JSON.stringify(reference).length>40000)fail('Story reference is too large.');
+ return reference;
+}
+function attachStories(project,raw,reviewed){
+ if(reviewed!==true)fail('Review the selected source text and destination before attaching.');
+ let data;try{data=JSON.parse(raw);}catch{fail('Invalid story search JSON.');}
+ if(!Array.isArray(data.matches)||!data.matches.length||data.matches.length>25)fail('Select between one and 25 original account records.');
+ // Validate the entire batch before changing the transaction; no partial attachment.
+ const records=data.matches.map(match=>{
+  const result={actor:data.actor,matches:[match]};
+  const storyReference=validateStoryReference({result,ledger:prepareStoryLedger(JSON.stringify(result)).ledger});
+  return {match,storyReference};
+ });
+ for(const {match,storyReference} of records){
+  const previous=project.sources.find(s=>s.storyReference?.ledger.posts[0].uri===match.uri);
+  if(previous){if(previous.storyReference.ledger.posts[0].cid!==match.cid)fail('This source URI has a different CID. Review the existing reference; it was not overwritten.');continue;}
+  project.sources.push({id:crypto.randomUUID(),title:'Story reference · @'+match.authorHandle,url:storyReference.ledger.posts[0].url,origin:'Public story evidence · '+match.authorDid,excerpt:match.text,creatorCheckedOn:'Explicitly reviewed for this project; not accepted canon or publication consent.',addedAt:new Date().toISOString(),checkedAt:null,checkState:'linked',lastError:'',storyReference});
+ }
 }
 function find(state,projectId,write=false){const p=state.projects.find(p=>p.id===projectId);if(!p)throw new WorkspaceError('Project not found.',404);if(write&&p.archived)fail('Restore this archived project before editing its work.');return p;}
 function log(p,action){const now=new Date().toISOString();p.updatedAt=now;p.activity=[...p.activity,{at:now,action}].slice(-100);}
@@ -41,10 +81,11 @@ const pid={project_id:str(36,true)};
 export const workspaceDefinitions=[
  spec('workspace_list','Read private creator project summaries from the authorized workspace.',{},[],true),
  spec('workspace_get','Resume one explicitly selected saved creator project.',pid,['project_id'],true),
- spec('workspace_create','Save a creator project locally in the authorized workspace; no external publication.',{name:str(160,true),purpose:str(),outcome:str(),currentState:str(),nextAction:str()},['name']),
+ spec('workspace_create','Save a creator project locally in the authorized workspace; no external publication.',{name:str(160,true),purpose:str(),outcome:str(),currentState:str(),nextAction:str(),story_result_json:str(200000),stories_reviewed:{type:'boolean'}},['name']),
  spec('workspace_update','Edit/archive/restore a saved creator project; no external publication.',{...pid,name:str(160,true),purpose:str(),outcome:str(),currentState:str(),nextAction:str(),archived:{type:'boolean'}},['project_id']),
  spec('workspace_select','Remember the selected project within this workspace.',pid,['project_id']),
  spec('workspace_add_source','Save an explicit source link/excerpt. Saving does not fetch or verify it.',{...pid,title:str(300,true),url:str(2000,true),origin:str(1000),excerpt:str(10000),creatorCheckedOn:str(1000)},['project_id','title','url']),
+ spec('workspace_attach_stories','Attach explicitly selected and reviewed public story evidence to this authorized project; preserves Ledger v2. No publication or canon change.',{...pid,result_json:str(200000,true),reviewed:{type:'boolean'}},['project_id','result_json','reviewed']),
  spec('workspace_add_note','Save a creator statement, separate from external evidence and AI suggestions.',{...pid,text:str(10000,true)},['project_id','text']),
  spec('workspace_add_task','Save a bounded task. A saved task is not external assignment.',{...pid,title:str(500,true),nextAction:str()},['project_id','title']),
  spec('workspace_update_task','Save task progress/blocker/next action. Done is creator-reported and requires evidence.',{...pid,task_id:str(36,true),title:str(500),status:{type:'string',enum:statuses},progress:str(),blocker:str(),nextAction:str(),completionEvidence:str()},['project_id','task_id']),
@@ -77,10 +118,11 @@ export function createWorkspaceService(store,{model=null,fetcher=fetch}={}){
    if(name==='workspace_list')result={projects:state.projects.map(({id,name,purpose,archived,updatedAt})=>({id,name,purpose,archived,updatedAt})),selectedId:state.selectedId,revision:state.revision};
    else if(name==='workspace_get')result={project:p,resume:resumeProject(p)};
    else if(name==='workspace_create'){
-    const now=new Date().toISOString();p={id:crypto.randomUUID(),name:args.name.trim(),purpose:args.purpose||'',outcome:args.outcome||'',currentState:args.currentState||'',nextAction:args.nextAction||'',archived:false,createdAt:now,updatedAt:now,sources:[],notes:[],tasks:[],messages:[],handoff:'',activity:[]};state.projects.push(p);state.selectedId=p.id;log(p,'Project created from creator input.');result={project:p,resume:resumeProject(p)};
+    const now=new Date().toISOString();p={id:crypto.randomUUID(),name:args.name.trim(),purpose:args.purpose||'',outcome:args.outcome||'',currentState:args.currentState||'',nextAction:args.nextAction||'',archived:false,createdAt:now,updatedAt:now,sources:[],notes:[],tasks:[],messages:[],handoff:'',activity:[]};if(args.story_result_json)attachStories(p,args.story_result_json,args.stories_reviewed);state.projects.push(p);state.selectedId=p.id;log(p,'Project created from creator input.');result={project:p,resume:resumeProject(p)};
    }else if(name==='workspace_select'){state.selectedId=p.id;result={project:p,resume:resumeProject(p)};}
    else if(name==='workspace_update'){for(const k of ['name','purpose','outcome','currentState','nextAction','archived'])if(k in args)p[k]=args[k];log(p,'Project details or archive state updated.');result={project:p,resume:resumeProject(p)};}
    else if(name==='workspace_add_source'){p.sources.push({id:crypto.randomUUID(),title:args.title.trim(),url:publicUrl(args.url),origin:args.origin||'Creator-supplied public link',excerpt:args.excerpt||'',creatorCheckedOn:args.creatorCheckedOn||'',addedAt:new Date().toISOString(),checkedAt:null,checkState:'linked',lastError:''});log(p,'Source link saved; contents not verified.');result={project:p};}
+   else if(name==='workspace_attach_stories'){attachStories(p,args.result_json,args.reviewed);log(p,'Reviewed public story references saved; no publication or canon change.');result={project:p};}
    else if(name==='workspace_add_note'){p.notes.push({id:crypto.randomUUID(),text:args.text.trim(),createdAt:new Date().toISOString(),kind:'creator-statement'});log(p,'Creator note saved.');result={project:p};}
    else if(name==='workspace_add_task'){p.tasks.push({id:crypto.randomUUID(),title:args.title.trim(),status:'todo',progress:'',blocker:'',nextAction:args.nextAction||'',completionEvidence:'',updatedAt:new Date().toISOString()});log(p,'Task saved; no external assignment.');result={project:p,resume:resumeProject(p)};}
    else if(name==='workspace_update_task'){const t=p.tasks.find(t=>t.id===args.task_id);if(!t)fail('Task does not belong to this project.');for(const k of ['title','status','progress','blocker','nextAction','completionEvidence'])if(k in args)t[k]=args[k];t.updatedAt=new Date().toISOString();log(p,'Task progress updated (creator-reported).');result={project:p,resume:resumeProject(p)};}
