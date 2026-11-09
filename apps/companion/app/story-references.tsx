@@ -39,7 +39,7 @@ export default function StoryReferences({destination,disabled=false,onReview}:Pr
  {result?.cursor&&<button type="button" disabled={busy} onClick={()=>void search(true)}>Continue older records</button>}
  {result?.matches.map((m:any)=>{const eligible=m.authorDid===result.actor.did&&!m.repost;return <article className="creator-item" key={m.uri}>
  <label className="creator-checkbox"><input type="checkbox" disabled={busy||!eligible||(!selected.includes(m.uri)&&selected.length>=25)} checked={selected.includes(m.uri)} onChange={e=>{revoke();setSelected(e.target.checked?[...selected,m.uri]:selected.filter(id=>id!==m.uri));}}/>Select reference · @{m.authorHandle} · {m.createdAt}</label>
- <p>{m.repost?'Repost · contextual record; cannot attach as account-authored text':m.reply?'Account-authored reply · surrounding conversation is not included':'Account-authored post'}</p>
+ <p>{m.authorDid!==result.actor.did?'Other author’s context · cannot attach as account-authored text':m.repost?'Repost · contextual record; cannot attach as account-authored text':m.reply?'Account-authored reply · surrounding conversation is not included':'Account-authored post'}</p>
  <details><summary>Inspect original text and provenance</summary><pre>{m.text}</pre><p>Author DID: {m.authorDid}</p><p>Source URI: {m.uri}</p><p>CID: {m.cid}</p><p>Retrieved: {m.retrievedAt} via {m.retrievalSource}</p><p>{m.verification}</p><a href={m.url} target="_blank" rel="noreferrer">Open original story source ↗</a></details>
  </article>;})}
  {!!chosen.length&&<div><h3>Review {chosen.length} selected references for {destination}</h3>{chosen.map((m:any)=><blockquote key={m.uri}><p>@{m.authorHandle} · {m.createdAt}{m.reply?' · reply':''}</p><pre>{m.text}</pre></blockquote>)}
