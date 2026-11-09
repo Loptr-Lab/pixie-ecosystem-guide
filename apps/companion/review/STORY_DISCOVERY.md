@@ -79,3 +79,16 @@ release, physical iPad Safari/VoiceOver and production-route acceptance remain
 open. No source merge, Railway release, secret, DNS, storage migration or plugin
 activation occurred. PR #12's disabled OAuth issuer/security work and positive
 allowlist are untouched; any future inclusion must receive its own review.
+
+## Preview build correction — 9 November 2026
+
+The existing Vercel Companion project selected the Next.js framework even though
+its existing build runs Vite and emits `tangled-site`. Deployment
+`dpl_HabVG8VUjmvfVUHZMXSu8k6XNARR` completed Vite successfully, then failed with
+`NEXT_OUTPUT_DIR_MISSING` while looking for `.next`.
+
+`apps/companion/vercel.json` now disables framework inference and selects the
+existing build/output directory. It affects the existing static review preview;
+it adds no server, MCP endpoint, private workspace integration or Railway change.
+The static preview remains browser-local and cannot establish installed-plugin
+acceptance. No dependency or lockfile change is needed.
