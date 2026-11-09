@@ -529,3 +529,164 @@ prior evidence, not a new production claim. Its existing preview predates this
 increment. PR #12 remains open and disabled; security/release gates are untouched.
 No merge, Railway release, storage migration, auth/DNS change, installed-plugin
 update, purchase or old-runtime retirement is authorized by these tests.
+
+## Standard.site references and explicit project imports — review 9 November 2026
+
+This increment follows PR #15 (`2779d5b`) and PR #14 rather than replacing either.
+Both and Made-Sick PR #72 were open at inspection; guide main was `2ea7361`.
+Creator main was `9358a26`. Current source, AGENTS.md, release gates, relevant
+schemas and PR records were inspected. Made-Sick already owns Standard.site
+lookup in `published-work.js` and its Sifa/published-work documentation. The exact
+unmet need was project-governed review/import in Companion, not another reader,
+directory, project database or publication service. The canonical ecosystem
+architecture remains the linked governance source above.
+
+Made-Sick's `review/standard-reference-contract` extends its reusable readers with
+`standard-references.js`; Companion uses byte-identical copies, pinned separately
+in `public/shared/standard-source.json`. Creator's matching context validator is
+pinned there to its own owning source. Existing Bluesky Ledger v2 and its pins are
+unchanged. `pixie.standard-reference/v1` and `pixie.standard-import/v1` are explicit
+new snapshot contracts, not an implicit Ledger schema expansion.
+
+### Project import definition and save contract
+
+Projects without `importDefinition` remain valid. They show an explanatory state;
+reference attachment still works independently, while metadata/content import
+fails closed. Only the authorized owner explicitly configuring supported imports
+creates `pixie.project-import/v1`; no project title, remote record or AI suggestion
+selects a permissive default. The UI presents these fields before confirmation:
+
+| Field | Supported values / application ceiling |
+| --- | --- |
+| `schema` | `pixie.project-import/v1` |
+| `collections` | Explicit subset of `site.standard.document`, `site.standard.publication` |
+| `operations` | Explicit subset of reference, metadata, content; configuration UI offers metadata/content while standalone reference attachment remains independent |
+| `formats` | `text/plain` only |
+| `maxItems` | 1–25 imported snapshots per project (standalone reference attachments excluded) |
+| `maxTextLength` | 1–20,000 characters; the existing workspace's 2MB/record limits also apply |
+| `destination`, `contentDestination` | Existing `sources`, separate `imported-drafts` |
+| Provenance, rights, review | Required provenance, explicit review, permission declaration when copying content; no independently verified rights claim |
+| `conflictPolicy` | `reject-revisions`: no silent overwrite or refresh |
+| `creatorDestination` | Explicit boolean; unchecked by default, plus separate exact-payload review required for any handoff |
+
+`workspace_configure_imports` validates and saves the definition through the
+existing authorized workspace transaction. `workspace_import_standard` validates
+the selected snapshot and operation, then atomically saves provenance separately
+from a new local draft. `workspace_edit_imported_draft` edits that draft alone.
+New fields are additive; no storage migration runs. Backups round-trip provenance,
+recorded definition, permission declaration and local edits. Earlier application
+versions may reject these new fields; restore such backups using this version.
+
+Reference attachment copies stable identity, title, attribution, revision, dates,
+publication relationship and retrieval/verification evidence; description/body
+are excluded. Metadata additionally copies the description. Supported content
+copies the exact plain-text representation into a separate local draft and keeps
+the immutable source snapshot free of body text. Every confirmation names the
+project, destination, copied/excluded fields and relevant definition. None becomes
+accepted canon, a canonical card definition, executable instructions or verified
+ownership. Local notes and canonical source records remain distinct.
+
+Same URI/CID/operation imports deduplicate. A later changed CID is rejected even
+if local edits exist; nothing is overwritten. A different operation on the same
+revision can create its own explicit snapshot. New definitions govern future
+imports and Creator transfers; historical snapshots retain their original
+reviewed definition. Source disappearance or publication failure is reported;
+there is no inferred replacement, background refresh or remote deletion
+propagation. PDS deletion does not establish deletion from pckt or other copies.
+
+### Supported retrieval and precise limits
+
+The shared reader uses existing verified handle/DID/current-PDS handling, closed
+provider restrictions, no credentials, manual redirects, request timeout and
+bounded decoded responses. It supports an account/collection page (up to 20
+records, explicit continuation and cancellation) or one exact Standard.site AT-URI.
+A URL alone is a link, not record identity; no arbitrary URL importer is added.
+Repeated cursors, identity mismatch, malformed provenance, errors and rate limits
+remain visible. Requests do not use publishing scopes or private-workspace data.
+
+Snapshots retain author DID/handle, collection/rkey/AT-URI, CID, publication
+relationship and resolved publication CID, canonical URL, source publish/update
+dates, retrieval timestamp/endpoint, content type/representation and verification
+limitations. CID and account records are source-reported; no signature verification
+is claimed. A missing publication or document-specific path yields no invented
+canonical URL; save asks the user to retry after resolving that source.
+
+Standard.site's current lexicon leaves rich bodies open-ended. Public pckt sample
+records contain `blog.pckt.content` (`items`) and separate `textContent`. Only that
+schema-defined plain-text field is copied. Rich bodies, HTML, blobs, media and
+undocumented REST/oEmbed APIs are not converted or fetched. Missing or over-limit
+plain text remains reference-only with an explanation. Application ceilings may
+be stricter than lexicon maxima.
+
+Website-to-record checks are separate, explicit and bounded. The publication
+`.well-known` endpoint and browser-parsed document head link are compared to the
+exact AT-URI. Only reviewed pckt.blog hosts are fetched. Custom domains,
+unsupported providers, CORS/network errors, unavailable parsers, redirects and
+mismatches do not become verification success. A match confirms reciprocal web
+association only, not authorship, rights, ownership or cryptographic verification.
+
+Primary documentation checked: [document schema](https://standard.site/docs/lexicons/document/),
+[publication schema](https://standard.site/docs/lexicons/publication/),
+[reciprocal verification](https://standard.site/docs/verification/),
+[AT Protocol XRPC](https://atproto.com/specs/xrpc), and [pckt](https://pckt.blog/).
+Exact linked schema CIDs and the live pckt representation evidence are recorded
+in Made-Sick's existing `docs/story-finder-retrieval.md` review addition.
+
+### Creator and publishing boundaries
+
+Artist-draft v1 cannot represent imported Standard.site source identities. The
+small extension is `pixie.standard-creator-context/v1`, carried in the existing
+origin-bound handoff's v2 message/receipt. The source contract, exact fields,
+limits, tests and backward compatibility are documented in Creator's existing
+`docs/artist-workflow.md`; both applications use the same strict validator.
+
+The project must explicitly permit the Creator destination and relevant
+collection/content. The user selects one saved source and reviews the exact
+payload. Companion rechecks current private project data and permission before
+sending; an older Creator that does not advertise support receives no project
+payload when this extension is requested. With no imported context selected,
+v1 behavior remains unchanged. Context appears read-only in My PIXIE, in memory;
+it is not silently merged into captions or restored from an older receipt.
+
+Explicit return retains source ID/CID/attribution beside the artist draft.
+Companion rechecks the initiating DID/project, current definition and unchanged
+approved payload before the existing reviewed private-note save. Failed/oversized
+returns receive no false acknowledgement. Sign-out/disconnect clears the Creator
+context. Media bytes, credentials, other imports and automatic synchronization
+are excluded. Compatible source in review is not proof that both live origins
+are deployed or accepted.
+
+After independently publishing through the chosen service, the user can record
+its public URL using the existing Sources and evidence form, labelled as a
+user-reported external publication. That record is not proof of publishing or
+delivery. Existing Creator sharing/link-receipt controls remain manual. No new
+publisher, AT Protocol writes, account linking, OAuth scope, credential form or
+change to PR #12 is introduced. Deck ownership/export contracts remain separate.
+
+### Validation and acceptance ledger
+
+- Companion unit/integration/security tests, typecheck and production build;
+  existing guide checks/build. New negative tests cover missing/disallowed policy,
+  rights/review, malformed/unsafe snapshots, cross-workspace IDs and unauthenticated
+  or unscoped-machine import access. Shared-source checksums remain enforced.
+- `tests/browser-standard-imports.cjs`: fixture account discovery → source/link
+  preview → explicit definition → review → reference/content import → local edit
+  → save/reopen/export, revision conflicts and inert source markup in server and
+  browser-local stores; 320/390/820px at 24px text and keyboard controls.
+- Creator's `tests/browser-standard-handoff.cjs`: two real local application
+  surfaces, synthetic upstream identity and source fixtures, capability negotiation,
+  reviewed v2 return, authorized private save and logout clearing. Creator's
+  existing unit/browser suite remains required; v1 handoff regressions remain.
+- Live, read-only provider evidence: exact public document
+  `at://did:plc:o6kuv3yieti2vqrb7ckmd5vg/site.standard.document/3mzkofw7ak7xb`
+  resolved with source-reported CID, publication URL and 3,056-character plain
+  text. A separate page returned 14 records plus continuation. No private import,
+  installed MCP invocation or live publishing was performed in that check.
+
+Fixture/browser checks do not establish live pckt reciprocal verification, browser
+CORS across all providers, deployed backend, installed plugin, physical Safari /
+VoiceOver or compatible live Creator releases. No merge, production release,
+plugin activation, storage migration, DNS/authentication change, purchase or
+retirement is performed. All existing backup, independent security and release
+gates remain in force. Source commits, checks and automatic preview links belong
+to the focused review PRs, not to a production-acceptance claim.

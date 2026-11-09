@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/ibloud/made-sick",
+  "commit": "acfacd54b9b9addd56c469b709f4a2730d91632d",
+  "files": {
+    "published-work.js": "63e02d9216408002924b5b46ee62ad8970d5741ea9997f3481effa4cfb8d2629",
+    "standard-references.js": "123664df411a701256e0e80f3d196084204d2733c91087df1fbe76e136ee49a7"
+  },
+  "schema": "pixie.standard-source/v1",
+  "reviewedOn": "2026-11-09",
+  "creatorContext": {
+    "repository": "https://github.com/ibloud/pixie-creator-os",
+    "commit": "ed9a9bc4aecd8fcadd561bfea46df6d17b34caab",
+    "file": "standard-context.js",
+    "sha256": "6e1365eee88bef150c08a9d2c2a36e1ae2e31ea3cb78d792aa8a9423b1350f81"
+  }
+}
