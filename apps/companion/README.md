@@ -377,3 +377,155 @@ and cross-user/ungranted-machine denial. Browser acceptance must show the saved
 failure state and notice without reporting success. The existing helper and
 central styles are unaffected. This is source review only; no deployment or
 live-provider acceptance is implied.
+
+## Story references, Creator handoff and deck authority — review 9 November 2026
+
+This review extends PR #14 (`ea923bb`) rather than reimplementing Story Finder.
+The existing implementation gap was the absence of search/selection in My projects.
+The canonical ecosystem map remains
+[ECOSYSTEM_ARCHITECTURE.md](https://github.com/ibloud/ibloud.github.io/blob/main/docs/ECOSYSTEM_ARCHITECTURE.md).
+Its dated source-identification hold predates the later recovered module and
+27 October runtime amendment above; no source migration is performed here.
+
+| Responsibility | Existing authority / implementation | Boundary |
+| --- | --- | --- |
+| Private project creation and persistence | This module: `app/creator-workspace.tsx`, `lib/workspace.mjs`, `lib/workspace-browser.mjs`, `lib/workspace-store.mjs`, `server.mjs` | Existing server-verified DID workspace; static previews use explicitly labelled origin-local IndexedDB. No parallel database. |
+| Public story retrieval and Ledger v2 | Made-Sick PR #72; byte-identical pinned `public/shared/story-retrieval.js` and `story-ledger.js`, provenance in `story-source.json` | Read-only public evidence; no private records or automatic canon acceptance. |
+| MCP story tools | `lib/companion.mjs`, `lib/story-discovery.mjs`, PR #14 | Existing authenticated transport; website identity is not plugin authorization. PR #12 remains separate and disabled. |
+| Project reference review | `app/story-references.tsx`, existing My projects create/edit flow | Explicit selected-text/destination review before transactional save. |
+| Creative preparation | `ibloud/pixie-creator-os`: `creator-model.js`, `creator.js`, `creator-environment.js` | Local-first media context, credits and accessibility text; reviewed return, not synchronization. |
+| Deck definitions and rules | Each deck's owning source; see inventory below | Companion stores references and annotations, never takes over rules/canon. |
+
+```mermaid
+flowchart LR
+  Public[Public account records] --> Retrieval[Made-Sick retrieval]
+  Retrieval --> Review[Companion inspect / select / review]
+  Review -->|explicit save| Project[Existing authorized project storage]
+  Project -->|user download| Ledger[Ledger v2 / workspace backup]
+  Project -->|explicit selected-project handoff| Creator[Creator OS local preparation]
+  Creator -->|return draft then review and save| Project
+  Deck[Owning deck source and pinned version] -->|reference only| Project
+```
+
+Implemented on the review branch: optional account/query/provider/page-bounded
+search in project creation and existing-project Sources and evidence. Continuation
+keeps prior matches; cancellation, coverage and errors are visible. Reposts and
+other authors' contextual posts remain inspectable but cannot be relabelled as
+account-authored attachments. Replies retain their reply flag; surrounding thread
+text is not silently included. Original text is rendered as text, never HTML.
+Up to 25 selected original records can be reviewed per attachment. A save failure
+reports no success. Creation plus references is one existing storage transaction.
+
+`workspace_attach_stories` and optional creation fields `story_result_json` /
+`stories_reviewed` use the same project authorization and storage transaction.
+Each source may contain an additive `storyReference: {result, ledger}`:
+`result` contains the reviewed actor and one original match, including retrieval
+endpoint/time/source and identity-verification caveat; `ledger` is unchanged
+Made-Sick Ledger v2 with URI, CID, author DID, source/selection times and original
+text. Old backups without this field remain valid. Current exports/imports retain
+it exactly. Earlier application versions reject unknown fields rather than safely
+round-trip new backups; use this version for restoring backups with references.
+A URI/CID already present is deduplicated; a changed CID at the same URI is
+rejected for separate review. Import provenance remains untrusted, not reverified.
+Existing workspace size/count limits still apply. No database migration is added.
+
+### Existing Creator OS handoff contract
+
+Reviewed current Creator source at `9358a26f97f6012e3107dd61ae96075ea1889569`.
+Companion's `lib/creator-handoff.mjs` already binds an opened Creator tab, exact
+origin, initiating DID and project. Sender and receiver recheck the originating
+session before saving. The user reviews the return in Companion; a successful
+`workspace_add_note` response precedes the saved acknowledgement.
+
+| Contract item | Existing behavior / precise limitation |
+| --- | --- |
+| Outbound | Explicitly send selected project ID, name, purpose, initiating DID, and last saved Creator draft. Other notes/projects and credentials excluded. |
+| Return | `pixie-creator-return/v1`, receipt ID, JSON `pixie-artist-draft/v1`; 9,000-character limit. Draft carries title/link/caption/credits/description, rights statement, destination, recorded links and bounded environment references. |
+| Authority | Creator validates its draft; Companion validates the receipt envelope and draft schema marker. Receipt data remains untrusted creator context, not accepted canon, proof of rights or instructions. Companion does not claim full Creator-model validation. |
+| Destination | Existing initiating project only. Create/select it in Companion first. No automatic new-project creation or destination inferred from imported data. |
+| Duplicates/conflicts | Identical receipt is deduplicated; changed receipts append notes. No silent overwrite or merge. Receipt ID and draft `pixie_id` are not card/source IDs. |
+| Exclusions | Media bytes, local file paths, credentials, automatic uploads/publication, account linking and automatic synchronization. |
+| Recovery | Failed save receives no acknowledgement. Retain/download draft and retry after restoring the initiating account/project. Oversized/disconnected work uses existing manual download/import. |
+| Research references | Creator's separate Story Router imports Ledger v2 through `story-ledger.js`; the artist-draft return does not carry arbitrary Story Router selections. Companion's reviewed Ledger v2 references remain separate. No automatic bridge is claimed. |
+
+No extension to Creator OS was necessary to expose the existing bounded handoff.
+Existing Companion handoff tests cover origin/source/session binding and save
+review; cross-origin live compatible-release, iPad and VoiceOver acceptance remain
+unverified. A new Story Router-to-artist-draft bridge requires an explicit contract
+extension preserving Ledger IDs and review, rather than copying a second project
+store.
+
+### Card data and cross-brand export contract — proposal, no storage change
+
+Current source inventory: Veiled Dominion engine main
+`b190754456549e313f1971f92fde3f35c296a97d` owns its canonical rules and contract
+versioning. Paragon-Reborn main `3ddb52994be4450c11c54ec07d2288372587a375`
+owns `docs/ORIGINAL_HERO_CARD_DIRECTION.md` and the existing v1 rules schema and
+`first-slice-v1.json` fixture (`tarot-strength`). Its new original hero-card
+mechanics remain proposals, separate from historical tarot material and Veiled
+Dominion canon. The direction explicitly requires stable IDs independent of
+printed numbers, and defers playing-card/tarot mappings. No universal production
+card catalog, ownership registry or card-order API has been verified in these
+reviewed sources. This inventory does not establish every ecosystem deck's owner;
+additional decks must supply their own authoritative source before integration.
+
+Use project-owned definitions and a shared portable contract. Physical database
+hosting is a later implementation choice; a single host must still enforce these
+logical ownership boundaries. Cross-branding creates a versioned presentation
+variant pointing at an approved card revision, never rewrites the source deck.
+
+| Record | Owner / source of truth | Access and mutation | Version and export/import rule |
+| --- | --- | --- | --- |
+| Deck/card definition | Owning deck repository or its explicitly designated service | Read under its actual license; only its maintainer-approved process changes definitions | Namespaced deck/card IDs plus immutable source commit/content revision. Export approved definition or source reference according to rights; reject unsupported versions. |
+| Rules / narrative canon / provenance | Relevant project rules and canon authority | Reviewed project changes; AI proposals and user annotations do not amend canon | Pin rules/content versions and source evidence. Keep original text and attribution distinct from adaptations. |
+| User collection / ownership claim | User record, with issuer evidence where available | Private to user; user edits their claims; only a trusted issuer verifies entitlement | A claim or card image grants no IP ownership. Export only user-authorized data; retain verification status. |
+| Project selections / annotations | Authorized Companion project | Project owner via existing project storage; no write to deck origin | Reference exact deck/card revision. Preserve annotations separately; duplicates by namespaced ID/version, explicit conflicts. |
+| Draft changes / brand variant | Creator's local draft or explicitly selected project | Creator edits proposal; deck owner accepts canonical changes | Separate draft/variant ID and revision, source card reference, brand assets and rights metadata. Import as draft, never replace canon. |
+| Gameplay/session state | Owning game runtime | Runtime validates moves and state; Companion/print tools cannot mutate it | Pin rules/content version, selected IDs and replay/choice events. Separate from collection and artwork exports. |
+| Print/render package | User-reviewed export snapshot | Exporter reads approved content and brand variant; manufacturer receives only explicitly submitted files | Schema version, deck/card IDs/revisions, ordered front/back mapping, template/brand revision, checksums, attribution/rights and vendor-specific print profile. Import validates schema, identities and conflicts; no write-through. |
+
+Proposed package fields: `schemaVersion`, `packageId`, `ownerProject`, `deckId`,
+`deckRevision`, `rulesRevision`, `cards[{cardId,cardRevision,sourceRef,front,back}]`,
+`brandVariant{id,revision,sourceDeckRef}`, `templateRevision`, `printProfile`,
+`provenance`, `rights`, `assetChecksums`. Names are proposed, not an implemented
+schema or an assertion of rights. Missing authority, rights, source revision or
+asset files must produce an actionable validation failure, never a guessed value.
+
+Use JSON for identity/provenance and a CSV projection for renderer variables;
+package rendered assets and a manifest with deterministic ordering. Polotno and
+QPMN are candidate rendering/fulfillment adapters from the user's references;
+current account access, endpoints and printer specifications have not been
+independently verified here. Rendering and ordering are separate steps. A digital
+Deck of Cards API does not establish print fulfillment or authority over authored
+decks. No ordering integration, purchase or API credential collection is added.
+
+For onboarding, offer one useful starter task with click/keyboard alternatives to
+dragging, optional short motion and reduced-motion support. Keep a clear Skip to
+workspace and a reopenable help deck. Checklist completion must not gate workspace
+access. Task cards are UI objects, not canonical game-card definitions. This is a
+UX recommendation; no onboarding redesign was bundled into the reference workflow.
+
+### Verification and release boundary for this increment
+
+Companion unit/integration/security suite: 89 tests pass; TypeScript and Vite
+production build pass. Existing guide syntax/content checks and static build pass.
+`tests/browser-story-references.cjs` exercises create and existing-project review,
+save/reload, deduplication, original-text rendering and Ledger download in Chromium
+with fixture providers, plus 320/390/820px reflow at 24px text. The existing
+`tests/browser-workspace.cjs` covers server and origin-local browser storage,
+restart, backup/restore and normal project/task/source regression behavior.
+Creator handoff's three existing unit tests pass. Provider pagination, cancellation,
+429, empty and unavailable cases are covered through the pinned retrieval module.
+
+Commands: `pnpm test`, `pnpm run typecheck`, `pnpm run build` in this module;
+`node tests/check.mjs` and `node scripts/build.mjs` in the guide root. Browser
+runners use `PIXIE_PLAYWRIGHT_MODULE` to point at the external test harness;
+no production dependency was added. Source checksums remain pinned and tested.
+
+These results do not verify live providers in the new UI, physical iPad Safari /
+VoiceOver, deployed backend, installed ChatGPT plugin, or cross-origin Creator
+live acceptance. PR #14's published historical local-HTTP/direct-PDS evidence is
+prior evidence, not a new production claim. Its existing preview predates this
+increment. PR #12 remains open and disabled; security/release gates are untouched.
+No merge, Railway release, storage migration, auth/DNS change, installed-plugin
+update, purchase or old-runtime retirement is authorized by these tests.
