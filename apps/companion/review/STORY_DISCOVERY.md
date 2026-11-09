@@ -92,3 +92,18 @@ existing build/output directory. It affects the existing static review preview;
 it adds no server, MCP endpoint, private workspace integration or Railway change.
 The static preview remains browser-local and cannot establish installed-plugin
 acceptance. No dependency or lockfile change is needed.
+
+### Current direct-PDS recheck
+
+The earlier proxy denial is historical: on 9 November at 15:17 UTC, the actual
+local HTTP `/mcp` adapter with its default proxy-aware `serverFetch` successfully
+searched the verified direct PDS. Two bounded pages examined 200 records, returned
+one exact title match, and retained continuation. Unauthenticated access returned
+401; authenticated access returned 200. Redacted public-source evidence is in
+`STORY_DISCOVERY_DIRECT_PDS.json`; the ephemeral local bearer was not recorded.
+This resolves the observed direct-PDS connectivity blocker for this environment,
+not full historical enumeration, deployed MCP or installed-plugin acceptance.
+
+Repair validation: 86 Companion tests, typecheck, Vite build and root guide
+check/build pass. Made-Sick's existing 85 tests also pass. No runtime, OAuth,
+private persistence or installed connection was changed.
