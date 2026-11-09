@@ -42,7 +42,7 @@ export default function CreatorWorkspace(){
  async function choose(id:string){if(!canLeave())return;await run('workspace_select',{project_id:id},'Selected saved project.',v=>{apply(v.project||null);requestAnimationFrame(()=>heading.current?.focus());});}
  const resume=project?resumeProject(project):null;
  return <section className="creator-workspace" aria-labelledby="creator-title">
- <div className="creator-heading"><div><p className="eyebrow">YOUR CREATIVE WORK</p><h1 id="creator-title">Greetings. Let’s keep the thread.</h1><p>Create a project, choose one next action, and return with your work intact.</p></div>
+ <div className="creator-heading"><div><p className="eyebrow">YOUR CREATIVE WORK</p><h1 id="creator-title" tabIndex={-1}>Greetings. Let’s keep the thread.</h1><p>Create a project, choose one next action, and return with your work intact.</p></div>
  <fieldset className="workspace-preferences"><legend>Reading preferences</legend><label>Theme<select aria-label="Theme" value={theme} onChange={e=>setTheme(e.target.value)}><option value="dark">Dark</option><option value="light">Light</option></select></label><label>Text size<select aria-label="Text size" value={fontSize} onChange={e=>setFontSize(e.target.value)}><option value="18">Standard · 18px</option><option value="20">Large · 20px</option><option value="24">Extra large · 24px</option></select></label><DeviceContext/></fieldset></div>
  <p className="workspace-storage">{connection?.notice||'Opening private storage…'}</p>
  <p role="status" aria-live="polite">{loading?'Opening your workspace…':busy?'Working…':notice}</p>{error&&<p className="error" role="alert">{error}</p>}
