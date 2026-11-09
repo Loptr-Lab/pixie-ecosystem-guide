@@ -62,3 +62,6 @@ for (const file of ["make-room-for-the-work.pdf", "make-room-for-the-work.html"]
 copyFileSync(path.join(root, "assets", "pixie-sigil-proposal.png"), path.join(output, "assets", "pixie-sigil-proposal.png"));
 
 copyFileSync(path.join(root, "assets", "pixie-hero-proposal.png"), path.join(output, "assets", "pixie-hero-proposal.png"));
+
+// Public specification only; no Companion runtime or release-gate changes.
+for (const file of ["evidence-package.schema.json", "evidence-workflow.md", "evidence-workflow.html"]) copyFileSync(path.join(root, "assets", file), path.join(output, "assets", file));
