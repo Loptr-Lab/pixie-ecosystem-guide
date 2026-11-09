@@ -1,0 +1,56 @@
+{
+  "checkedAt": "2026-11-09T15:17:38.734Z",
+  "transport": "Actual local HTTP /mcp with default serverFetch; live direct PDS",
+  "unauthenticatedStatus": 401,
+  "authenticatedStatus": 200,
+  "source": "pds",
+  "actor": {
+    "handle": "ibloud.xyz",
+    "did": "did:plc:b5uem672ci23lqrcz6j6bs2c",
+    "pds": "https://morel.us-east.host.bsky.network",
+    "verification": "handle/DID binding verified",
+    "documentUrl": "https://plc.directory/did:plc:b5uem672ci23lqrcz6j6bs2c"
+  },
+  "coverage": {
+    "recordsChecked": 200,
+    "pages": 2,
+    "oldest": "2026-10-01T13:27:18.009Z",
+    "newest": "2026-11-06T10:33:14.213Z",
+    "scope": "This batch only; repository enumeration uses record keys, not publication-date ordering.",
+    "endpoints": [
+      {
+        "endpoint": "https://morel.us-east.host.bsky.network/xrpc/com.atproto.repo.listRecords?repo=did%3Aplc%3Ab5uem672ci23lqrcz6j6bs2c&collection=app.bsky.feed.post&limit=100",
+        "count": 100,
+        "inputCursor": null,
+        "outputCursor": "3mxewlkisc22q"
+      },
+      {
+        "endpoint": "https://morel.us-east.host.bsky.network/xrpc/com.atproto.repo.listRecords?repo=did%3Aplc%3Ab5uem672ci23lqrcz6j6bs2c&collection=app.bsky.feed.post&limit=100&cursor=3mxewlkisc22q",
+        "count": 100,
+        "inputCursor": "3mxewlkisc22q",
+        "outputCursor": "3mwsxjyxz7c2j"
+      }
+    ]
+  },
+  "matches": [
+    {
+      "authorHandle": "ibloud.xyz",
+      "authorDid": "did:plc:b5uem672ci23lqrcz6j6bs2c",
+      "uri": "at://did:plc:b5uem672ci23lqrcz6j6bs2c/app.bsky.feed.post/3mxmerm56s43v",
+      "cid": "bafyreiffonw477tqfc3faeutlpakczir6mgsdmcep2ttxmqduodth4yct4",
+      "url": "https://bsky.app/profile/did%3Aplc%3Ab5uem672ci23lqrcz6j6bs2c/post/3mxmerm56s43v",
+      "text": "The Diary of Death’s Daughter — a spiritual court record, read by PIXIE\n\nFiction exploring pain, violation, vengeance and remembrance. Inspired by a personal response to Ren’s “Seven Sins”; this is not a claim about his intent or experience\n\nhttps://violet.daddyslittlemortis.com/\n#everygameends",
+      "createdAt": "2026-10-11T16:00:45.085Z",
+      "retrievedAt": "2026-11-09T15:17:38.669Z",
+      "retrievalSource": "pds",
+      "endpoint": "https://morel.us-east.host.bsky.network/xrpc/com.atproto.repo.listRecords?repo=did%3Aplc%3Ab5uem672ci23lqrcz6j6bs2c&collection=app.bsky.feed.post&limit=100",
+      "collection": "app.bsky.feed.post",
+      "reply": false,
+      "repost": false,
+      "verification": "PDS-reported record and CID; handle/DID binding verified; CID not cryptographically verified",
+      "embedding": "unknown"
+    }
+  ],
+  "hasContinuation": true,
+  "limits": "Two pages only; not full historical enumeration, hosted MCP or installed-plugin acceptance. Ephemeral local bearer excluded."
+}

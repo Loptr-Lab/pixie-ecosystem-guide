@@ -1,0 +1,24 @@
+[
+  {
+    "width": 820,
+    "height": 1180,
+    "keyboardLoad": true,
+    "matches": 10,
+    "overflow": false,
+    "status": "10 PUBLIC POSTS LOADED · 10 VISIBLE MATCHES. SOURCE: BSKY-ENTRYWAY. EXAMINED 10 UNIQUE RECORDS DATED 2025-03-13T14:35:37.750Z TO 2025-05-18T14:49:35.477Z. HISTORICAL COVERAGE INCOMPLETE; CONTINUE LOADING OLDER BATCHES.",
+    "errors": [],
+    "ariaSnapshot": "- region \"Load public posts\":\n  - paragraph: Step 1 · choose an archive\n  - heading \"Load public posts\" [level=2]\n  - text: AT Protocol handle or DID A public handle or DID, such as ibloud.xyz. No sign-in required.\n  - textbox \"AT Protocol handle or DID A public handle or DID, such as ibloud.xyz. No sign-in required.\": ibloud.xyz\n  - text: Retrieval source\n  - combobox \"Retrieval source\":\n    - option \"Bluesky AppView (hydrated feed)\"\n    - option \"Public PDS repository (historical records)\"\n    - option \"Bluesky entryway repository relay\" [selected]\n  - text: From date Optional\n  - textbox \"From date Optional\"\n  - text: Through date Optional\n  - textbox \"Through date Optional\"\n  - text: Words or phrase Leave empty to browse chronologically. Multiple words must all appear. Searches post text, media descriptions and link titles; does not transcribe audio.\n  - searchbox \"Words or phrase Leave empty to browse chronologically. Multiple words must all appear. Searches post text, media descriptions and link titles; does not transcribe audio.\": Diary of Deaths Daughter\n  - checkbox \"Exact phrase\" [checked]\n  - text: Exact phrase\n  - checkbox \"Include replies\" [checked]\n  - text: Include replies\n  - checkbox \"Include reposts\"\n  - text: Include reposts\n  - checkbox \"Videos only\"\n  - text: Videos only\n  - checkbox \"Posts with links only\"\n  - text: Posts with links only\n  - button \"Load posts\"\n  - button \"Load 100 older posts\"\n  - button \"Load up to 2,500 older posts\"\n  - button \"Stop loading\" [disabled]\n  - button \"Clear this tab\"\n  - status: \"10 public posts loaded · 10 visible matches. Source: bsky-entryway. Examined 10 unique records dated 2025-03-13T14:35:37.750Z to 2025-05-18T14:49:35.477Z. Historical coverage incomplete; continue loading older batches.\"",
+    "source": "Browser network fixtures replay actual HTTP MCP matched records; no live browser provider claim."
+  },
+  {
+    "width": 390,
+    "height": 1180,
+    "keyboardLoad": true,
+    "matches": 10,
+    "overflow": false,
+    "status": "10 PUBLIC POSTS LOADED · 10 VISIBLE MATCHES. SOURCE: BSKY-ENTRYWAY. EXAMINED 10 UNIQUE RECORDS DATED 2025-03-13T14:35:37.750Z TO 2025-05-18T14:49:35.477Z. HISTORICAL COVERAGE INCOMPLETE; CONTINUE LOADING OLDER BATCHES.",
+    "errors": [],
+    "ariaSnapshot": "- region \"Load public posts\":\n  - paragraph: Step 1 · choose an archive\n  - heading \"Load public posts\" [level=2]\n  - text: AT Protocol handle or DID A public handle or DID, such as ibloud.xyz. No sign-in required.\n  - textbox \"AT Protocol handle or DID A public handle or DID, such as ibloud.xyz. No sign-in required.\": ibloud.xyz\n  - text: Retrieval source\n  - combobox \"Retrieval source\":\n    - option \"Bluesky AppView (hydrated feed)\"\n    - option \"Public PDS repository (historical records)\"\n    - option \"Bluesky entryway repository relay\" [selected]\n  - text: From date Optional\n  - textbox \"From date Optional\"\n  - text: Through date Optional\n  - textbox \"Through date Optional\"\n  - text: Words or phrase Leave empty to browse chronologically. Multiple words must all appear. Searches post text, media descriptions and link titles; does not transcribe audio.\n  - searchbox \"Words or phrase Leave empty to browse chronologically. Multiple words must all appear. Searches post text, media descriptions and link titles; does not transcribe audio.\": Diary of Deaths Daughter\n  - checkbox \"Exact phrase\" [checked]\n  - text: Exact phrase\n  - checkbox \"Include replies\" [checked]\n  - text: Include replies\n  - checkbox \"Include reposts\"\n  - text: Include reposts\n  - checkbox \"Videos only\"\n  - text: Videos only\n  - checkbox \"Posts with links only\"\n  - text: Posts with links only\n  - button \"Load posts\"\n  - button \"Load 100 older posts\"\n  - button \"Load up to 2,500 older posts\"\n  - button \"Stop loading\" [disabled]\n  - button \"Clear this tab\"\n  - status: \"10 public posts loaded · 10 visible matches. Source: bsky-entryway. Examined 10 unique records dated 2025-03-13T14:35:37.750Z to 2025-05-18T14:49:35.477Z. Historical coverage incomplete; continue loading older batches.\"",
+    "source": "Browser network fixtures replay actual HTTP MCP matched records; no live browser provider claim."
+  }
+]

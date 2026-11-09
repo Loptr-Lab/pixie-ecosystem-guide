@@ -1,0 +1,11 @@
+{
+  "owner": "ibloud/made-sick",
+  "upstreamBase": "03613ef",
+  "status": "Coordinated review only; not a released Made-Sick module",
+  "sha256": {
+    "story-retrieval.js": "3a4334e9f23dc34d7bc80cd35f391e1c2d5403fc3ea059c1f29597fb1d944492",
+    "story-ledger.js": "c8eaa0ecfb3a50aa459ba029f6d617b77e80566a4cac36bcdf442d49a757a0db"
+  },
+  "upstreamCommit": "ebffc3402edcbacd9283c861b0b5afe45b42f085",
+  "upstreamReview": "https://github.com/ibloud/made-sick/pull/72"
+}
