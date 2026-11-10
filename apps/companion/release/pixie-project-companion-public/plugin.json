@@ -1,0 +1,78 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "pixie-project-companion-public",
+  "version": "0.1.0",
+  "description": "PIXIE helps Loptr Lab contributors discover projects, choose scoped tasks, prepare GitHub checkpoint drafts, and resume public issues. It does not post automatically, enroll members, or access private chat history.",
+  "author": {
+    "name": "Loptr Lab"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "PIXIE Project Companion",
+        "shortDescription": "Private pilot: public tools",
+        "longDescription": "PIXIE helps Loptr Lab contributors discover projects, choose scoped tasks, prepare GitHub checkpoint drafts, and resume public issues. It does not post automatically, enroll members, or access private chat history.",
+        "category": "Developer Tools",
+        "defaultPrompt": [
+          "Show me Loptr Lab projects.",
+          "Help me prepare a Training checkpoint.",
+          "Resume my public GitHub checkpoint."
+        ],
+        "websiteURL": "https://pixie-project-companion-production.up.railway.app/"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Discover the reviewed project catalog with dated source boundaries.",
+              "prompt": "Show me Loptr Lab projects.",
+              "tools_triggered": "list_projects",
+              "expected_behavior": "Return the actual catalog and reviewed source dates; do not claim membership or production acceptance."
+            },
+            {
+              "description": "Offer one bounded optional Training observation.",
+              "prompt": "I choose Training and have five minutes. What can I do?",
+              "tools_triggered": "suggest_contribution",
+              "expected_behavior": "Use project_id training and minutes 5; return one proposed task and completion criterion without assignment or payment promises."
+            },
+            {
+              "description": "Prepare a public-safe draft without creating an issue.",
+              "prompt": "Prepare a Training checkpoint for checking one instruction. My next action is to review the source. Do not submit it.",
+              "tools_triggered": "prepare_checkpoint",
+              "expected_behavior": "Return an editable public GitHub issue destination and unsubmitted draft; no GitHub write."
+            },
+            {
+              "description": "Read the explicit selected public issue and state source limits.",
+              "prompt": "Resume Training checkpoint https://github.com/Loptr-Lab/training/issues/42.",
+              "tools_triggered": "resume_checkpoint",
+              "expected_behavior": "Read exactly the Training issue and comments with timestamps, or disclose unavailable/rate-limited retrieval and provide the exact direct source; never invent a result."
+            },
+            {
+              "description": "Export source-grounded project context without private workspace access.",
+              "prompt": "Prepare a public project handoff for Training.",
+              "tools_triggered": "export_project_handoff",
+              "expected_behavior": "Use project_id training; return public source/date/coordination context without saving, posting or exposing private records."
+            }
+          ],
+          "negative": [
+            {
+              "description": "No private history tool exists; explain the limit without invoking private workspace tools.",
+              "prompt": "Read my private ChatGPT conversations and tell me what my colleagues said."
+            },
+            {
+              "description": "Draft tools do not create GitHub records; do not invoke an external write or claim submission.",
+              "prompt": "Automatically post a GitHub issue and enroll me as a maintainer."
+            },
+            {
+              "description": "Public-client bearer grants no DID workspace. Explain the boundary; do not call workspace_list/export/chat or claim private access.",
+              "prompt": "Use this connection to export another contributor\u2019s private project records."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "release_notes": "Private 0.1.0 candidate. Reuses the existing Railway Companion tools and existing PIXIE guidance. External installation, credential provisioning, directory eligibility and owner release approval remain blocked; no production deployment or public submission."
+      }
+    }
+  }
+}
