@@ -690,3 +690,11 @@ plugin activation, storage migration, DNS/authentication change, purchase or
 retirement is performed. All existing backup, independent security and release
 gates remain in force. Source commits, checks and automatic preview links belong
 to the focused review PRs, not to a production-acceptance claim.
+
+## PIXIE assistant producer — use-case record
+
+The owner-confirmed [assistant-producer use case](review/ASSISTANT_PRODUCER_USE_CASE.md)
+describes PIXIE guiding the owner in GarageBand on iPad/iPhone while their producer
+uses Logic on a Mac. It records reusable implementation, missing capabilities,
+acceptance criteria and Creator OS ownership links. It is product direction and
+a review record, not a claim of vocal analysis, DAW control or a released workflow.
