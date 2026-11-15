@@ -15,8 +15,9 @@ The owner's devices are iPad/iPhone. The producer's device is a Mac. Requiring
 the owner to operate a Mac, reducing the app to file conversion/exchange, or
 substituting a generic DAW shopping recommendation does not meet this use case.
 GarageBand is the initial DAW choice; Logic is the producer's DAW. PIXIE is the
-assistant in the app. Claude/ChatGPT or an MCP client is not PIXIE's product
-identity or a required user-facing registration flow.
+assistant in the app. OpenAI is the preferred AI provider; PIXIE remains the product identity and
+user-facing assistant. MCP remains vendor-neutral where useful; no desktop-AI-client
+registration is required in the intended workflow.
 
 ## Pre-hire and post-engagement roles — owner direction, 15 November 2026
 
@@ -133,10 +134,21 @@ Do not duplicate that work or weaken its release boundaries.
 ## Draft #64 and release boundary
 
 The macOS audio draft is a possible supporting component, not delivery of this
-mobile assistant-producer app. Its Claude Desktop registration is the client setup explicitly required for the
-separate macOS MCP build. It is not PIXIE's product identity and does not establish
-the intended app connection or an iPad/iPhone workflow. That PIXIE-owned app
-connection remains outstanding; do not describe Mac client setup as delivery of it.
+mobile assistant-producer app. Its obsolete desktop-client registration has been removed from the audio draft.
+Setup installs the local tools and prints the stdio launch command; it does not
+configure a provider, credentials or app permissions.
+
+Companion already has an optional server-only OpenAI-compatible model adapter
+(`lib/model-provider.mjs`), configured only when the existing URL/key/model settings
+are provided. Its bounded selected-project context, authorization and failure
+contracts are reusable. Compatibility with a request format is not proof of a
+live OpenAI connection or of permission to invoke local audio tools. This review
+adds no endpoint, credential, model dependency, hosting, authentication or provider
+integration. A connection and its context/tool permissions must be tested before
+it is described as operational. Any alternate provider requires evidence of a
+material capability, accessibility, privacy, cost or platform benefit and owner
+approval of the trade-offs.
+
 
 Documentation only: no runtime/UI change, merge, deployment, installed-plugin
 update, production data transfer or release is authorized by this record. The
