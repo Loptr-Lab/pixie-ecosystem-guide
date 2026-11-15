@@ -133,10 +133,10 @@ Do not duplicate that work or weaken its release boundaries.
 ## Draft #64 and release boundary
 
 The macOS audio draft is a possible supporting component, not delivery of this
-mobile assistant-producer app. Its Claude Desktop registration is part of the
-superseded initial setup specification; it is not the approved app onboarding.
-Removal/replacement and the actual PIXIE connection are still outstanding. Do
-not describe that setup as usable from the owner's iPad/iPhone.
+mobile assistant-producer app. Its Claude Desktop registration is the client setup explicitly required for the
+separate macOS MCP build. It is not PIXIE's product identity and does not establish
+the intended app connection or an iPad/iPhone workflow. That PIXIE-owned app
+connection remains outstanding; do not describe Mac client setup as delivery of it.
 
 Documentation only: no runtime/UI change, merge, deployment, installed-plugin
 update, production data transfer or release is authorized by this record. The
