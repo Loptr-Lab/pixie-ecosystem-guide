@@ -18,6 +18,29 @@ GarageBand is the initial DAW choice; Logic is the producer's DAW. PIXIE is the
 assistant in the app. Claude/ChatGPT or an MCP client is not PIXIE's product
 identity or a required user-facing registration flow.
 
+## Pre-hire and post-engagement roles — owner direction, 15 November 2026
+
+[Johnson](https://ibloud.github.io/tarantula-clone-hero/tutor.html) is the existing
+pre-hire educational and producer-fit experience. A prospective student explores
+a source-supported teaching approach, creative methods and compatibility before
+deciding whether to pursue a professional engagement. A lesson creates no booking,
+contract, producer participation or endorsement, including from Ren.
+
+PIXIE Companion is the creator's post-engagement project assistant: preserve the
+approved scope, explain the engaged producer's instructions, retain revisions and
+original work, and help complete authorized tasks with available hardware. The
+owner need not acquire the producer's Mac. This is distinct from Johnson's
+pre-hire stage and does not make the current helper a completed conversational
+assistant. Media preparation/review remains in Creator OS; business-facing
+explanation and outcome review remains in Holdings; equipment reuse remains in
+Device Stewardship. These links establish no shared accounts or automatic transfer.
+
+The [Charlie J case-study concept](https://50ways.loptrlab.com/concepts/charlie-growth-site.html)
+is an unapproved real-producer-services concept. Fictional Charlie and NIGHT BUS
+in Creator OS are a separate design case; no involvement or likeness permission
+is inferred. Existing 50 Ways PRs #11/#34 are merged; #33 is closed/unmerged.
+No duplicate case study or character is created.
+
 ## Owning sources and existing work
 
 This application module is the primary home for the assistant behavior, project
