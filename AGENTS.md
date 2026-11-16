@@ -1,3 +1,52 @@
+# Repository instruction entry — Loptr-Lab/pixie-ecosystem-guide
+
+Scope: this repository. Existing public PIXIE guide and Companion source in apps/companion; guide, client/plugin and runtime are distinct.
+
+Before work, explicitly read the [shared ecosystem instructions](https://github.com/ibloud/ibloud.github.io/blob/docs/agent-design-continuity/docs/ECOSYSTEM_INSTRUCTIONS.md)
+(or `docs/ECOSYSTEM_INSTRUCTIONS.md` in a locally available `ibloud/ibloud.github.io` checkout),
+then the local sources below and any applicable nested `AGENTS.md`.
+A link does not automatically load or inherit instructions. The shared file is under
+review in portfolio PR #59; it is not yet a merged production record. If unavailable,
+identify the gap and stop only work dependent on it; do not fabricate its contents.
+Local security, privacy, canon, license, tests and release authority remain local.
+
+## Local essentials and sources
+
+The Companion-specific instructions below retain their scope. One AT Protocol OAuth sign-in, DID-owned private workspaces and strict cross-user isolation remain mandatory. Never migrate/assign/delete legacy unowned data or claim a false save. Fail closed; preserve backup, cutover, OAuth/MCP and owner-release gates. Root build/check are not Companion acceptance. Brand guidance is not authority to resolve the held full-backend source handoff.
+
+Read: [README.md](README.md), [brand-guidelines.md](brand-guidelines.md), [HOSTING-AND-DNS.md](HOSTING-AND-DNS.md), [COMPANION-HOSTING-STATUS.md](COMPANION-HOSTING-STATUS.md), [apps/companion/lib/principles.mjs](apps/companion/lib/principles.mjs), [apps/companion/deployment/RAILWAY.md](apps/companion/deployment/RAILWAY.md).
+Inspect existing changes, open issues/PRs and unpublished work before creating a duplicate.
+Use the current contribution entry in README and the local contribution policy where present;
+record ideas as proposals, not automatic assignments. Identify exact source conflicts and
+preserve behavior; do not invent precedence or relax a hold.
+
+## Existing work
+
+Reuse [brand/instruction PR #9](https://github.com/Loptr-Lab/pixie-ecosystem-guide/pull/9). Private plugin #12, runtime blockers #7 and data-loss recovery issue #17 retain their gates.
+
+## Checks and release boundary
+
+Commands confirmed in local scripts/configuration (not a claim of current passing results):
+
+- `npm run check`
+- `npm run build`
+- `cd apps/companion && npm test`
+- `cd apps/companion && npm run typecheck`
+- `cd apps/companion && npm run build`
+
+Local hosting records designate Pages guide and existing Railway Companion; migration/cutover holds remain. Current service and review behavior unverified.
+No merge, deploy, release, DNS, authentication or infrastructure change is authorized
+by this instruction structure. Preserve existing palettes, symbols, stylesheet ownership,
+privacy and governance gates. Report committed documentation, checks, previews, merged
+source and observed live behavior separately. Automated checks do not establish physical
+iPad/Safari/VoiceOver acceptance. MCP tools do not automatically discover or enforce this file.
+
+No nested AGENTS.md was found in the inspected revision; add one only for materially different directory requirements.
+
+---
+
+## Retained project instructions
+
 Read [brand-guidelines.md](brand-guidelines.md) before changing brand, copy, images or presentation. Reuse the accepted Companion sigil and existing shared CSS; do not invent replacements.
 
 # PIXIE Companion — binding development instructions

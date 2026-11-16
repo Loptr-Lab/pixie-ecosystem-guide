@@ -1,3 +1,11 @@
+## Repository instructions and contribution entry
+
+Start with [AGENTS.md](AGENTS.md), explicitly read the
+[shared ecosystem instructions](https://github.com/ibloud/ibloud.github.io/blob/docs/agent-design-continuity/docs/ECOSYSTEM_INSTRUCTIONS.md), then follow the local sources and existing
+issues/PRs identified there. The shared update is under review in portfolio PR #59;
+a link does not load instructions automatically. Project-specific canon, privacy,
+security, licensing and release gates remain in this repository.
+
 Read [brand-guidelines.md](brand-guidelines.md) before changing brand, copy, images or presentation. Reuse the accepted Companion sigil and existing shared CSS; do not invent replacements.
 
 ## Current owner direction — 27 October 2026
