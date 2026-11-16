@@ -1,0 +1,2 @@
+import {reviewActionEvidence} from '../references/evidence-review.mjs';
+let input='';for await(const chunk of process.stdin){input+=chunk;if(input.length>40000)throw Error('Input too large');}try{const {record,review}=JSON.parse(input);const result=reviewActionEvidence(record,JSON.stringify(review));console.log(JSON.stringify(result,null,2));if(!result.allowed)process.exitCode=1;}catch(e){console.log(JSON.stringify({allowed:false,blockers:[e.message]}));process.exitCode=1;}

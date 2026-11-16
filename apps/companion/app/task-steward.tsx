@@ -18,6 +18,8 @@ export default function TaskSteward({projectId,projects,onProjectChange}:{projec
  const [progress,setProgress]=useState({status:'proposed',progress:'',next_action:'',completion_evidence:''});
  const [reviewed,setReviewed]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[error,setError]=useState('');
  const [action,setAction]=useState('inspect_sources');
+ const [evidence,setEvidence]=useState({instruction_reference:'',instruction_excerpt:'',source_reference:'',source_excerpt:'',existing_work:'',preserved_decisions:''});
+ function evidenceReview(){return JSON.stringify({task_id:task?.record.task_id,revision:task?.record.revision,project_id:task?.record.project_id,instructions:[{id:'instructions',project_id:task?.record.project_id,reference:evidence.instruction_reference,status:'read',excerpt:evidence.instruction_excerpt}],sources:[{id:'source',project_id:task?.record.project_id,reference:evidence.source_reference,status:'read',excerpt:evidence.source_excerpt}],existing_work:evidence.existing_work,preserved_decisions:evidence.preserved_decisions.split('\n').filter(Boolean),claims:[],checks:[]});}
  const resultHeading=useRef<HTMLHeadingElement>(null);
  async function call<T>(name:string,args:Record<string,unknown>):Promise<T>{
   const response=await companionRequest({name,args});const value=await response.json() as T & {error?:string};
@@ -25,11 +27,13 @@ export default function TaskSteward({projectId,projects,onProjectChange}:{projec
  }
  function accept(value:TaskResult){
   setTask(value);setProgress({status:value.record.status,progress:value.record.progress,next_action:value.record.next_action,completion_evidence:value.record.completion_evidence});
+  setEvidence({instruction_reference:'',instruction_excerpt:'',source_reference:'',source_excerpt:'',existing_work:'',preserved_decisions:''});
   setReviewed(false);setNotice('Task draft ready. Review its source, scope and public-safe contents before exporting.');
   requestAnimationFrame(()=>resultHeading.current?.focus());
  }
  async function perform(work:()=>Promise<void>){setBusy(true);setError('');try{await work();}catch(e){setError(e instanceof Error?e.message:'Task request unavailable.');}finally{setBusy(false);}}
- const dirty=!!task&&Object.keys(progress).some(key=>progress[key as keyof typeof progress]!==task.record[key as keyof TaskRecord]);
+ const projectChanged=!!task&&task.record.project_id!==projectId;
+ const dirty=projectChanged||!!task&&Object.keys(progress).some(key=>progress[key as keyof typeof progress]!==task.record[key as keyof TaskRecord]);
  function download(){
   if(!task||!reviewed||dirty)return;
   const url=URL.createObjectURL(new Blob([JSON.stringify(task.record,null,2)+'\n'],{type:'application/json'}));
@@ -65,8 +69,16 @@ export default function TaskSteward({projectId,projects,onProjectChange}:{projec
     <label>Completion evidence (required for reported complete)<textarea maxLength={2000} value={progress.completion_evidence} onChange={e=>{setReviewed(false);setProgress({...progress,completion_evidence:e.target.value});}}/></label>
     <button disabled={busy}>Update task draft</button>
    </form>
+   <details><summary>Evidence before drafting</summary><p>Record what you actually read. This check tests completeness; it cannot independently authenticate your report. A project change or task update requires fresh review.</p>
+    <label>Applicable instructions — reference<input maxLength={1000} value={evidence.instruction_reference} onChange={e=>setEvidence({...evidence,instruction_reference:e.target.value})}/></label>
+    <label>Instruction that governs this task<textarea maxLength={2000} value={evidence.instruction_excerpt} onChange={e=>setEvidence({...evidence,instruction_excerpt:e.target.value})}/></label>
+    <label>Substantive source — reference<input maxLength={1000} value={evidence.source_reference} onChange={e=>setEvidence({...evidence,source_reference:e.target.value})}/></label>
+    <label>Relevant source content you read<textarea maxLength={2000} value={evidence.source_excerpt} onChange={e=>setEvidence({...evidence,source_excerpt:e.target.value})}/></label>
+    <label>Existing work to reuse and the smallest correction<textarea maxLength={2000} value={evidence.existing_work} onChange={e=>setEvidence({...evidence,existing_work:e.target.value})}/></label>
+    <label>Confirmed decisions and project boundaries to preserve — one per line<textarea maxLength={2000} value={evidence.preserved_decisions} onChange={e=>setEvidence({...evidence,preserved_decisions:e.target.value})}/></label>
+   </details>
    <label>Check a proposed action<input maxLength={100} value={action} onChange={e=>setAction(e.target.value)}/></label>
-   <button disabled={busy} onClick={()=>void perform(async()=>{const result=await call<{reason:string}>('check_task_action',{record_json:JSON.stringify(task.record),action});setNotice(result.reason);})}>Check scope · no execution</button>
+   <button disabled={busy||projectChanged||dirty} onClick={()=>void perform(async()=>{const result=await call<{reason:string}>('check_task_action',{record_json:JSON.stringify(task.record),action,evidence_review_json:evidenceReview()});setNotice(result.reason);})}>Check scope · no execution</button>
    <p>{task.notice}</p>{dirty&&<p role="status">Update the task draft before reviewing and downloading these changes.</p>}{task.record.project_id!==projectId&&<p>The selected project changed. This task remains attached to its original project until you explicitly clear it.</p>}
    <label className="task-choice"><input type="checkbox" disabled={dirty} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>I reviewed this task and confirm it contains only information safe to share.</label>
    <button className="primary" disabled={busy||!reviewed||dirty} onClick={download}>Download task checkpoint</button>

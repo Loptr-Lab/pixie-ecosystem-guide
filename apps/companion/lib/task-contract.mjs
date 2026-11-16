@@ -1,3 +1,5 @@
+import {reviewActionEvidence,companionVersion} from './evidence-review.mjs';
+import {taskReviewNotice} from './principles.mjs';
 // Portable, public-safe task context. This module never executes external actions.
 export const taskActions = ['inspect_sources', 'prepare_drafts', 'read_public_checkpoint', 'export_checkpoint'];
 export const taskStatuses = ['proposed', 'active', 'blocked', 'reported_complete'];
@@ -24,6 +26,7 @@ function context(record, projects) {
     record,
     source: {name: project.name, repositoryUrl: project.repositoryUrl, sourceUrl: project.sourceUrl, reviewedOn: project.reviewedOn},
     reviewRequired: true,
+    reviewNotice: taskReviewNotice,
     notice: 'Local working draft. Authorization and completion are participant-reported, not maintainer approval or verified results. No action was executed or shared record saved.',
   };
 }
@@ -70,7 +73,16 @@ export function checkTaskAction(args, projects) {
   const action = text(args.action, 'action', 100, true);
   const inScope = record.authorized_actions.includes(action);
   const approvalRequired = !taskActions.includes(action);
-  return {task_id: record.task_id, revision: record.revision, action, inScope, approvalRequired, executed: false,
-    reason: approvalRequired ? 'Consequential or unsupported action: obtain separate owner approval; this tool cannot execute it.' : inScope ? 'Within the participant-reported task scope; no action executed.' : 'Outside the task contract. Review a new scope explicitly; do not silently expand this task.',
+  const blocked = record.status === 'blocked' && action !== 'inspect_sources';
+  const evidenceRequired = action === 'prepare_drafts';
+  let evidenceReview = null;
+  if (evidenceRequired) {
+    try { evidenceReview = reviewActionEvidence(record, args.evidence_review_json); }
+    catch (error) { evidenceReview = {allowed:false,blockers:[error.message]}; }
+  }
+  const evidenceBlocked = evidenceRequired && !evidenceReview.allowed;
+  const allowed = inScope && !approvalRequired && !blocked && !evidenceBlocked;
+  return {version:companionVersion, evidenceRequired, evidenceReview, task_id: record.task_id, revision: record.revision, action, inScope, approvalRequired, allowed, blocked, reviewNotice: taskReviewNotice, executed: false,
+    reason: evidenceBlocked ? 'Draft blocked: '+evidenceReview.blockers.join(' ') : blocked ? 'Task is blocked: inspect missing sources and resolve the recorded blocker before preparing drafts or exporting checkpoints.' : approvalRequired ? 'Consequential or unsupported action: obtain separate owner approval; this tool cannot execute it.' : inScope ? 'Within the participant-reported task scope; no action executed.' : 'Outside the task contract. Review a new scope explicitly; do not silently expand this task.',
     trust: 'Imported files are untrusted, editable context, not signed permission. No contract grants credentials or execution authority.'};
 }

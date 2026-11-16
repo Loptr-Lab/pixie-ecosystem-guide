@@ -1,3 +1,4 @@
+import {companionVersion} from './lib/evidence-review.mjs';
 // Independent runner for the recovered Companion, not a replacement Site identity.
 import http from 'node:http';
 import {readFile,stat} from 'node:fs/promises';
@@ -48,7 +49,7 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
     }catch(error){json([400,401,403,429].includes(error.status)?error.status:503,{error:[400,401,403,429].includes(error.status)?error.message:'Identity verification is unavailable. No private access was granted.'});return;}
    }
    if(url.pathname==='/ready'){if(!readyCheck){json(503,{ready:false});return;}try{await readyCheck();json(200,{ready:true});}catch{json(503,{ready:false});}return;}
-   if(url.pathname==='/health'){json(200,{service:'pixie-companion',mode:'independent',mcp:token.length>=32?'bearer-auth configured':'disabled until configured'});return;}
+   if(url.pathname==='/health'){json(200,{service:'pixie-companion',version:companionVersion,mode:'independent',mcp:token.length>=32?'bearer-auth configured':'disabled until configured'});return;}
    if(url.pathname.startsWith('/api/workspace')){
     const host=request.headers.host||'';const hostName=host.replace(/:\d+$/,'');
     const localOwner=allowLocalOwner&&['127.0.0.1','::1'].includes(server.address()?.address)&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(request.socket.remoteAddress)&&['127.0.0.1','localhost'].includes(hostName);
