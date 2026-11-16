@@ -153,3 +153,11 @@ approval of the trade-offs.
 Documentation only: no runtime/UI change, merge, deployment, installed-plugin
 update, production data transfer or release is authorized by this record. The
 existing backup, privacy, identity, source/canon and release rules remain in force.
+
+## Legal & Rights intake — owner placement decision (16 November 2026)
+
+PIXIE Holdings is the governance source for a shared baseline legal-and-rights intake; see the [review-only framework](https://github.com/ibloud/pixie-holdings/blob/review/legal-rights-intake/docs/LEGAL_RIGHTS_INTAKE.md). This existing Companion app owns private project-specific briefs and may eventually present the relevant questions and review flags to the authorized project owner. Creator OS retains asset provenance, permission evidence and its existing external-sharing hold. A Companion answer is not legal clearance and must never bypass that hold.
+
+**Current status:** placement and draft intake requirements only. No legal assessment engine, intake UI, contract generator, provider connection, new project field, private data transmission or new acceptance/signature behavior is implemented in this branch. The pending independent legal research and qualified jurisdiction-specific review must be considered before adopting legal templates as approved language.
+
+A future implementation, if separately approved, should reuse authorized project tasks/notes and existing review/version mechanisms rather than introducing another app or private database. Every-project baseline: purpose and jurisdictions, participants/scope, contributions/ownership claims, third-party/AI inputs, permissions, compensation/credits, privacy/accessibility and approval. Conditional flags include music/AI, video/likeness, performances/events/tickets, minors, paid work and cross-border data. Unknown is not cleared; draft documents are not signed agreements.
