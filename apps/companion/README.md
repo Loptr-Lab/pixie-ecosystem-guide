@@ -224,6 +224,25 @@ styles, explicit consent and source-first behavior in future changes.
 
 ## Existing plugin and Tangled mirror
 
+### Separate regular-plugin private candidate — 7 November 2026
+
+`release/pixie-project-companion-public/` packages the same Railway MCP tools with
+the owner's exact connector description and existing PIXIE skill. It declares the
+existing bearer authentication, not OAuth. The source-only optional
+`PIXIE_MCP_CLIENT_TOKEN_HASHES` registry permits distinct, revocable public-client
+credentials; those clients discover only the 16 public/draft tools and cannot
+invoke private workspace operations. No duplicate tool implementation is added.
+The legacy machine bearer, Site App/plugin, browser identity and workspace storage
+remain unchanged. No setting or deployment is applied by this candidate.
+
+See the package README and `review/REGULAR_PLUGIN_RELEASE_CHECK.md` for installation
+gates and exact evidence. Importing the new private regular plugin is not tester
+installation proof. The deployed Railway service still needs separate approved
+source/configuration rollout and live client acceptance; no owner credential may
+be distributed. Public-directory eligibility of bearer/API-key authentication is
+unverified. Keep the release private; do not submit, publish, migrate endpoints or
+retire the Site from this source review.
+
 The installed plugin remains the existing owner-identified 1.0.4 release; the
 local historical public-submission manifest says 1.0.3 and is not a verified new
 release. Installed tools still expose the previous catalog; these new task tools

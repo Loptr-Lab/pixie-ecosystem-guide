@@ -3,7 +3,8 @@ import http from 'node:http';
 import {readFile,stat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {timingSafeEqual} from 'node:crypto';
+import {readMcpClientHashes,identifyMcpClient} from './lib/mcp-client-access.mjs';
+import {publicMcpTools} from './lib/mcp-oauth.mjs';
 import {createWorkspaceService} from './lib/workspace.mjs';
 import {createFileWorkspaceStore,createDidWorkspaceResolver} from './lib/workspace-store.mjs';
 import {createModelProvider} from './lib/model-provider.mjs';
@@ -13,17 +14,13 @@ import {createOwnerIdentity,ownerIdentityConfiguration} from './lib/owner-identi
 
 const defaultRoot=fileURLToPath(new URL('./tangled-site/',import.meta.url));
 const maximumBody=2_100_000;
-function authorized(header,token){
- if(!token||token.length<32||typeof header!=='string')return false;
- const expected=Buffer.from('Bearer '+token),actual=Buffer.from(header);
- return expected.length===actual.length&&timingSafeEqual(expected,actual);
-}
 async function body(request){
  let length=0;const chunks=[];
  for await(const chunk of request){length+=chunk.length;if(length>maximumBody)throw Object.assign(Error('Request too large'),{status:413});chunks.push(chunk);}
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
-export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,workspaceFile=process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)),modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
+export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',mcpClientHashes=process.env.PIXIE_MCP_CLIENT_TOKEN_HASHES||'',fetcher=serverFetch,workspaceStore,workspaceFile=process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)),modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null,mcpOAuth=null}={}){
+ const clients=readMcpClientHashes(mcpClientHashes,token);
  const store=workspaceStore||createFileWorkspaceStore(workspaceFile);
  const model=modelProvider===undefined?createModelProvider({url:process.env.PIXIE_MODEL_URL,key:process.env.PIXIE_MODEL_API_KEY,model:process.env.PIXIE_MODEL_NAME,fetcher}):modelProvider;
  const services={workspace:createWorkspaceService(store,{model,fetcher})};
@@ -34,12 +31,13 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
   const json=(status,value)=>{response.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});response.end(JSON.stringify(value));};
   try{
    const url=new URL(request.url,'http://localhost');
+   if(mcpOAuth&&await mcpOAuth.route(request,response,url,identity))return;
    if(url.pathname.startsWith('/api/auth/')||(url.pathname==='/'&&url.searchParams.has('state')&&(url.searchParams.has('code')||url.searchParams.has('error')))){
     if(!identity){if(url.pathname==='/api/auth/session'&&request.method==='GET'){json(200,{service:'pixie-server-identity',configured:false,session:null});return;}json(503,{error:'Owner identity is not configured.'});return;}
     try{
      response.setHeader('Referrer-Policy','no-referrer');
      if(url.pathname==='/api/auth/session'&&request.method==='GET'){json(200,await identity.status(request,response));return;}
-     if(url.pathname==='/'&&request.method==='GET'){await identity.callback(request,response,url.searchParams);response.writeHead(303,{Location:'/#account','Cache-Control':'no-store'});response.end();return;}
+     if(url.pathname==='/'&&request.method==='GET'){await identity.callback(request,response,url.searchParams);const continuation=mcpOAuth?await mcpOAuth.continuation(request):null;response.writeHead(303,{Location:continuation||'/#account','Cache-Control':'no-store'});response.end();return;}
      if(request.method==='POST'&&String(request.headers['content-type']||'').startsWith('application/json')){
       if(url.pathname==='/api/auth/login'){json(200,await identity.login(request));return;}
       if(url.pathname==='/api/auth/logout'){json(200,await identity.logout(request,response));return;}
@@ -72,11 +70,20 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
      const payload=await body(request);json(200,await runTool(payload.name,payload.args,fetcher));return;
     }
     // Never trust Sites identity headers on an independent public server.
-    if(token.length<32){json(503,{error:'Independent MCP authentication is not configured.'});return;}
-    if(!authorized(request.headers.authorization,token)){json(401,{error:'Bearer authentication required.'});return;}
+    let principal;
+    if(mcpOAuth){try{principal=await mcpOAuth.authenticate(request);}catch(error){json(error.status===403?403:error.status===429?429:503,{error:'MCP authorization unavailable.'});return;}}
+    if(!principal&&token.length>=32&&(!mcpOAuth||!String(request.headers.authorization||'').startsWith('Bearer pxoa_')))principal=identifyMcpClient(request.headers.authorization,token,clients);
+    if(!principal){if(mcpOAuth)response.setHeader('WWW-Authenticate',mcpOAuth.challenge);json(mcpOAuth||token.length>=32?401:503,{error:mcpOAuth||token.length>=32?'Bearer authentication required.':'Independent MCP authentication is not configured.'});return;}
+    const rpc=await body(request);
+    // New client grants reuse the existing public operations only. Never pass a
+    // DID, browser session, private service or owner credential into this route.
+    if((principal.kind==='public-client'||principal.kind==='oauth-public')&&rpc?.jsonrpc==='2.0'&&rpc.id!==undefined&&rpc.method==='tools/call'&&(principal.kind==='oauth-public'?!publicMcpTools.has(rpc.params?.name):String(rpc.params?.name||'').startsWith('workspace_'))){
+     json(200,{jsonrpc:'2.0',id:rpc.id??null,result:{content:[{type:'text',text:'This connection supports public project and draft tools only.'}],isError:true}});return;
+    }
     // Machine credentials never imply a browser user's project identity.
     // Do not give a global workspace to an unscoped bearer token.
-    const result=await handleRpc(await body(request),true,fetcher,{workspace:{run:async()=>{throw Error('Machine workspace access requires an explicit principal grant.');}}});
+    const result=await handleRpc(rpc,true,fetcher,{workspace:{run:async()=>{throw Error('Machine workspace access requires an explicit principal grant.');}}});
+    if((principal.kind==='public-client'||principal.kind==='oauth-public')&&rpc?.method==='tools/list'&&Array.isArray(result.body?.result?.tools))result.body.result.tools=result.body.result.tools.filter(tool=>principal.kind==='oauth-public'?publicMcpTools.has(tool.name):!tool.name.startsWith('workspace_'));
     if(result.body===null){response.writeHead(result.status);response.end();}else json(result.status,result.body);
     return;
    }

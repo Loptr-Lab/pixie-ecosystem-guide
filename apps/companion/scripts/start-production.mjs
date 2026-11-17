@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {mkdir,stat,realpath,open,unlink} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {createCompanionServer} from '../server.mjs';
+import {mcpOAuthConfiguration,configuredMcpOAuth} from '../lib/mcp-oauth.mjs';
 import {createFileWorkspaceStore} from '../lib/workspace-store.mjs';
 import {createOwnerIdentity,ownerIdentityConfiguration} from '../lib/owner-identity.mjs';
 const inside=(parent,child)=>{const relative=path.relative(parent,child);return relative!==''&&!relative.startsWith('..'+path.sep)&&relative!=='..'&&!path.isAbsolute(relative);};
@@ -26,15 +27,19 @@ export async function startProduction(env=process.env,{oauthFactory}={}){
  const store=createFileWorkspaceStore(config.file);
  const identityConfig=ownerIdentityConfiguration(env);
  const identity=identityConfig?createOwnerIdentity({...identityConfig,oauthFactory}):null;
+ const oauthConfig=mcpOAuthConfiguration(env);
+ if(oauthConfig&&!identity)throw Error('MCP OAuth requires verified browser identity.');
+ const mcpOAuth=configuredMcpOAuth(oauthConfig);
  const readyCheck=async()=>{
   await store.transaction(async state=>({result:true,write:false,state}));
   await identity?.ready();
+  await mcpOAuth?.ready();
   const probe=path.join(actualParent,'.ready-'+randomUUID());let handle;
   try{handle=await open(probe,'wx',0o600);await handle.sync();}
   finally{if(handle){await handle.close();await unlink(probe);}}
  };
  await readyCheck();
- const server=createCompanionServer({token:config.token,workspaceStore:store,workspaceFile:config.file,allowLocalOwner:false,readyCheck,identity,identityConfig:null});
+ const server=createCompanionServer({token:config.token,workspaceStore:store,workspaceFile:config.file,allowLocalOwner:false,readyCheck,identity,identityConfig:null,mcpOAuth});
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(config.port,config.host,resolve);});
  return server;
 }
