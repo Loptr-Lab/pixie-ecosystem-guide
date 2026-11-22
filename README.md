@@ -67,3 +67,12 @@ Its build, tests and Node/MCP runner are independent of the root guide build.
 This source review does not deploy the module, migrate the existing Site/plugin,
 change domains or establish mirror synchronization. Follow the module's explicit
 acceptance and Site-retirement gates; the guide's existing functionality remains.
+
+
+## PIXIE development methodology
+
+The emerging **PIXIE Development Protocol (PDP)** is a reusable approach for designing, building, testing, governing, and releasing MCP servers, bots, assistants, and agentic workflows. It is grounded in existing PIXIE projects and does not replace MCP or imply that all projects share runtime, data, or permissions.
+
+Breadcrumb: **PIXIE Ecosystem Guide → [PIXIE Development Protocol](docs/PIXIE-DEVELOPMENT-PROTOCOL.md) → Project Brief → Capability/Permission Map → Tool Contract → Tests/Evidence → Release Record**.
+
+The protocol is working version 0.1; use it as a review checklist and propose improvements through pull requests. It is not a certification that existing implementations already satisfy every requirement.
