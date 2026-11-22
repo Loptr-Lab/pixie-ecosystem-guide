@@ -38,3 +38,8 @@ that menu, not in duplicate footer/owner-only setup controls. Use explicit
 project-information consent language, not a blanket claim of no private access.
 Use deployment/RAILWAY.md's existing cutover gates; consolidation is incomplete
 until one canonical runtime serves users and the old writable runtime is retired.
+
+
+## Hosting portability authority
+
+Railway is the current canonical hosted runtime, not a permanent PIXIE architectural requirement. Refer to [`apps/companion/deployment/HOSTING-PORTABILITY.md`](apps/companion/deployment/HOSTING-PORTABILITY.md) for documented hosting alternatives and migration criteria. Portability documentation does **not** authorize provisioning another host, moving data or secrets, changing DNS or infrastructure, or retiring Railway. Any migration requires explicit owner approval, verified backups and restore, reviewed cutover, and acceptance gates. Until then, Railway remains canonical.
