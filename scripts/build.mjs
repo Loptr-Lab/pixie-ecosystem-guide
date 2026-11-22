@@ -65,3 +65,6 @@ copyFileSync(path.join(root, "assets", "pixie-hero-proposal.png"), path.join(out
 
 // Public specification only; no Companion runtime or release-gate changes.
 for (const file of ["evidence-package.schema.json", "evidence-workflow.md", "evidence-workflow.html"]) copyFileSync(path.join(root, "assets", file), path.join(output, "assets", file));
+
+// Readable owner use-case review; no assistant/audio runtime is activated.
+copyFileSync(path.join(root, 'assets', 'assistant-producer-review.html'), path.join(output, 'assets', 'assistant-producer-review.html'));

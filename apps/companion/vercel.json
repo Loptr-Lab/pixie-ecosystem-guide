@@ -2,5 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "pnpm run build",
-  "outputDirectory": "tangled-site"
+  "outputDirectory": "tangled-site",
+  "git": {
+    "deploymentEnabled": {
+      "docs/assistant-producer-use-case": false
+    }
+  }
 }

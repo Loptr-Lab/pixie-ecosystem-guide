@@ -690,3 +690,23 @@ plugin activation, storage migration, DNS/authentication change, purchase or
 retirement is performed. All existing backup, independent security and release
 gates remain in force. Source commits, checks and automatic preview links belong
 to the focused review PRs, not to a production-acceptance claim.
+
+## PIXIE assistant producer — use-case record
+
+The owner-confirmed [assistant-producer use case](review/ASSISTANT_PRODUCER_USE_CASE.md)
+describes PIXIE guiding the owner in GarageBand on iPad/iPhone while their producer
+uses Logic on a Mac. It records reusable implementation, missing capabilities,
+acceptance criteria and Creator OS ownership links. It is product direction and
+a review record, not a claim of vocal analysis, DAW control or a released workflow.
+
+### AI-provider direction — owner confirmation, 15 November 2026
+
+PIXIE is the product and user-facing assistant. OpenAI is preferred. The existing
+optional server-only adapter in `lib/model-provider.mjs` is an OpenAI-compatible
+request seam, not proof of a live OpenAI integration or local audio-tool access.
+Reuse its authorized selected-project boundary where feasible; test connection,
+permissions and failure behavior before claiming a working integration. MCP
+interfaces remain vendor-neutral where useful. No desktop-AI-client registration
+is part of the intended onboarding. This review does not configure a provider,
+credential, model, service, hosting or authentication. A different provider needs
+demonstrated benefit and approval before any switch; see the use-case record.
