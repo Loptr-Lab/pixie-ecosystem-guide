@@ -108,3 +108,17 @@ Catalog discovery should draw from official app directories and documentation, r
 **Status:** concept and delivery plan documented. Audit, implementation, real adapter, device tests, and decision-maker validation are separate acceptance gates. Vercel is not required for this documentation slice; deployment status is not asserted.
 
 Related breadcrumbs: [Holdings](https://github.com/ibloud/pixie-holdings), [Creator OS](https://github.com/ibloud/pixie-creator-os), and [PIXIE Development Protocol](docs/PIXIE-DEVELOPMENT-PROTOCOL.md).
+
+
+## Digital Jockey Network — cross-project breadcrumb
+
+**Breadcrumb:** PIXIE Ecosystem Guide → [PIXIE Creator OS](https://github.com/ibloud/pixie-creator-os) → [My Audience / Digital Jockey Studio](https://ibloud.github.io/pixie-creator-os/digital-jockey.html) → [Digital Jockey Network architecture](https://github.com/ibloud/pixie-creator-os/blob/main/docs/digital-jockey-network.md) → [Play It Forward / Your Week on Air](https://loptr-lab.github.io/pay-it-forward/radio/).
+
+The relationship is intentional but not a shared runtime: Creator OS is the creator-side workstation and local project-prompt generator; Play It Forward is the audience-facing community-radio reference experience. The Digital Jockey Network is the proposed social layer connecting independent DJ/station identities, shows, discovery, follows, recommendations and collaboration. AT Protocol / Atmosphere is the intended interoperable direction, not a claim of current authentication or publishing integration.
+
+Current evidence/status:
+- Play It Forward manual show builder: implementation under review in [PR #27](https://github.com/Loptr-Lab/pay-it-forward/pull/27).
+- Creator OS Digital Jockey Studio and prompt generator: implementation under review in [PR #70](https://github.com/ibloud/pixie-creator-os/pull/70).
+- Apple Music account import, timestamped weekly history, public DJ profiles, follows, feeds, moderation and live audio broadcasting remain separate future acceptance gates.
+
+Do not merge private listening history into public social records by default. A tracklist and link are not audio hosting rights or evidence of a play event. Each project keeps its own source of truth and permissions.
