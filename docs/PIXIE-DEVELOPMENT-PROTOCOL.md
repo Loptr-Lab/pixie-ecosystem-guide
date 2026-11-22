@@ -64,7 +64,7 @@
 6. **Evaluation plan:** happy paths, negative tests, accessibility, and acceptance criteria.
 7. **Release record:** source SHA, test results, known limitations, deployment evidence, rollback and handoff.
 
-Use templates in [templates/](./templates/) when available. Do not treat an absent template as a reason to skip an artifact; use the headings in this document.
+The brief and tool-spec templates are included inline above. Copy them into the project's documentation and adapt them; do not treat a template as a substitute for project-specific decisions.
 
 ## Capability authority levels
 
