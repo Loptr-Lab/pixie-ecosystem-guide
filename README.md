@@ -76,3 +76,35 @@ The emerging **PIXIE Development Protocol (PDP)** is a reusable approach for des
 Breadcrumb: **PIXIE Ecosystem Guide → [PIXIE Development Protocol](docs/PIXIE-DEVELOPMENT-PROTOCOL.md) → Project Brief → Capability/Permission Map → Tool Contract → Tests/Evidence → Release Record**.
 
 The protocol is working version 0.1; use it as a review checklist and propose improvements through pull requests. It is not a certification that existing implementations already satisfy every requirement.
+
+
+## PIXIE Control Plane coordination breadcrumb
+
+**Breadcrumb:** [PIXIE Ecosystem Guide](README.md) → Control Plane review → [PIXIE Holdings](https://github.com/ibloud/pixie-holdings) (hardware/resource stewardship) → [PIXIE Creator OS](https://github.com/ibloud/pixie-creator-os) (creative coordination and app catalog) → Companion / My PIXIE (private identity, consent, persistence).
+
+This is a cross-project concept-validation and delivery plan, not a declaration that these repositories share a runtime or that external integrations are connected. The proposed layers retain separate ownership and data boundaries.
+
+### What decision-makers are being asked to validate
+
+- ATProto/ecosystem stewards: portable identity and public-record boundaries without exposing private projects.
+- App/service developers: a capability-aware coordination layer that does not claim installation, authorization, or publishing on their behalf.
+- Hardware and creative-tool developers: evidence-based device capability discovery and permission boundaries.
+- MCP implementers: explicit tool contracts, scoped consent, preview-before-action, and testable handoffs.
+- Accessibility practitioners: keyboard/focus, assistive technology, recovery, and low-burden control.
+- Developer-relations/ecosystem leads: whether a reproducible reference slice and catalog provenance are useful.
+
+### Organic curated source distribution
+
+Catalog discovery should draw from official app directories and documentation, repository releases/issues, hardware specifications, developer conversations, user-submitted sources, and first-party compatibility tests. Each item needs provenance, discovery/check timestamps, confidence, capabilities, compatibility notes, and a lifecycle status. Discovery is not verification; verification is not integration; integration is not user authorization. Preserve stale/unknown states and avoid unsupported claims.
+
+### Delivery and testing gates
+
+1. Audit the current Holdings control panel, Creator OS My Apps/Connections, Companion private persistence, and source/catalog surfaces.
+2. Agree on data ownership, capability and permission contracts, stable PIXIE identifiers, and catalog provenance.
+3. Build one vertical slice with one real, verified adapter and a user-confirmed handoff; keep fallback/manual paths visible.
+4. Test denial, disconnect/revoke, recovery/export, destination mismatch, stale/unverified catalog entries, keyboard/accessibility, and private-data leakage.
+5. Publish a demo, architecture notes, test evidence, limitations, and a focused feedback request for the roles above.
+
+**Status:** concept and delivery plan documented. Audit, implementation, real adapter, device tests, and decision-maker validation are separate acceptance gates. Vercel is not required for this documentation slice; deployment status is not asserted.
+
+Related breadcrumbs: [Holdings](https://github.com/ibloud/pixie-holdings), [Creator OS](https://github.com/ibloud/pixie-creator-os), and [PIXIE Development Protocol](docs/PIXIE-DEVELOPMENT-PROTOCOL.md).
