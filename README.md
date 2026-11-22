@@ -10,7 +10,8 @@ source identities, OAuth callbacks and installed endpoints are preserved while
 migration dependencies remain unresolved. Where dated hosting/DNS/source claims below differ, this direction supersedes
 them. Existing build and contribution instructions remain applicable. No DNS or
 hosting change is authorized here. Follow the existing
-[canonical cutover inventory](apps/companion/deployment/RAILWAY.md).
+[canonical cutover inventory](apps/companion/deployment/RAILWAY.md) and the
+[hosting portability/alternative-host review](apps/companion/deployment/HOSTING-PORTABILITY.md).
 
 # PIXIE Ecosystem Guide
 
