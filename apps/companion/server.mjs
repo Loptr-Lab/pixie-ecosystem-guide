@@ -10,6 +10,7 @@ import {createModelProvider} from './lib/model-provider.mjs';
 import {serverFetch} from './lib/server-fetch.mjs';
 import {runTool,handleRpc} from './lib/companion.mjs';
 import {createOwnerIdentity,ownerIdentityConfiguration} from './lib/owner-identity.mjs';
+import {createPrintfulReader,ownerPrintfulRead} from './lib/printful.mjs';
 
 const defaultRoot=fileURLToPath(new URL('./tangled-site/',import.meta.url));
 const maximumBody=2_100_000;
@@ -24,6 +25,7 @@ async function body(request){
  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_MCP_TOKEN||'',fetcher=serverFetch,workspaceStore,workspaceFile=process.env.PIXIE_DATA_FILE||fileURLToPath(new URL('./.pixie-data/workspace.json',import.meta.url)),modelProvider,allowLocalOwner=false,readyCheck,identityConfig=ownerIdentityConfiguration(process.env),identity=identityConfig?createOwnerIdentity(identityConfig):null}={}){
+ const printfulRead=createPrintfulReader({fetcher});
  const store=workspaceStore||createFileWorkspaceStore(workspaceFile);
  const model=modelProvider===undefined?createModelProvider({url:process.env.PIXIE_MODEL_URL,key:process.env.PIXIE_MODEL_API_KEY,model:process.env.PIXIE_MODEL_NAME,fetcher}):modelProvider;
  const services={workspace:createWorkspaceService(store,{model,fetcher})};
@@ -56,6 +58,11 @@ export function createCompanionServer({root=defaultRoot,token=process.env.PIXIE_
     if((origin&&new URL(origin).host!==host)||request.headers['sec-fetch-site']==='cross-site'){json(403,{error:'Invalid workspace origin'});return;}
     let principal=null;try{principal=localOwner?null:await identity?.current(request);}catch{json(503,{error:'Owner identity verification is unavailable.'});return;}
     if(url.pathname==='/api/workspace/capabilities'&&request.method==='GET'){json(200,{localOwner,authenticated:!!principal,did:principal?.did||null,identityConfigured:!!identity,csrf:principal?.csrf||null,modelConfigured:!!model,modelEndpoint:model?new URL(process.env.PIXIE_MODEL_URL||'https://configured-provider.invalid').origin:null});return;}
+    if(url.pathname==='/api/workspace/printful'){
+     if(request.method!=='POST'){response.writeHead(405,{Allow:'POST'});response.end();return;}
+     const result=await ownerPrintfulRead({principal,ownerDid:identityConfig?.ownerDid,verifyCsrf:()=>identity.csrf(request,principal),read:printfulRead,loadArgs:async()=>{if(!String(request.headers['content-type']||'').startsWith('application/json'))throw Object.assign(Error('Use application/json'),{status:415});return body(request);}});
+     json(200,result);return;
+    }
     if(url.pathname!=='/api/workspace'){json(404,{error:'Not found'});return;}
     if(request.method!=='POST'){response.writeHead(405,{Allow:'POST'});response.end();return;}
     if(!localOwner&&!principal){json(401,{error:'Sign in with your Atmosphere identity to open your private workspace.'});return;}
